@@ -39,42 +39,19 @@ const SERVICES: { icon: IconName; title: string; text: string }[] = [
     text: "Un espace de lecture calme pour consulter les ouvrages et travailler sereinement.",
   },
   {
-    icon: "ticket",
-    title: "Abonnements",
-    text: "Des formules adaptées à votre rythme pour profiter pleinement de la bibliothèque.",
-  },
-  {
     icon: "search",
     title: "Recherche documentaire",
     text: "Un accompagnement pour identifier les ouvrages et ressources adaptés à vos besoins.",
   },
   {
+    icon: "wifi",
+    title: "Outils numériques",
+    text: "Des outils sur place pour consulter, apprendre et avancer dans vos recherches.",
+  },
+  {
     icon: "users",
     title: "Accueil des visiteurs",
     text: "Un enregistrement simple, à l'accueil ou sur la borne libre-service.",
-  },
-];
-
-const VALUES: { icon: IconName; title: string; text: string }[] = [
-  {
-    icon: "book",
-    title: "Lecture & recherche",
-    text: "Des collections et un cadre propice à la lecture, à l'étude et à la recherche.",
-  },
-  {
-    icon: "users",
-    title: "Accompagnement",
-    text: "Une équipe disponible pour vous orienter et répondre à vos questions.",
-  },
-  {
-    icon: "wifi",
-    title: "Outils numériques",
-    text: "Des outils numériques disponibles sur place pour la consultation et l'apprentissage.",
-  },
-  {
-    icon: "sparkles",
-    title: "Accueil de tous les publics",
-    text: "Abonnés, visiteurs et groupes sont reçus avec la même attention.",
   },
 ];
 
@@ -125,20 +102,21 @@ export default async function Home() {
   return (
     <div className="min-h-screen">
       <header className="sticky top-0 z-50 border-b border-white/10 bg-brand-950/90 text-white backdrop-blur-xl">
-        <div className="mx-auto flex h-[72px] max-w-7xl items-center justify-between gap-4 px-5">
-          <Link href="/" className="flex items-center gap-3">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-2 px-3 sm:h-[72px] sm:gap-4 sm:px-5">
+          <Link href="/" className="flex min-w-0 items-center gap-2 sm:gap-3">
             <Image
               src="/logo.png"
               alt="Logo de la bibliothèque"
-              width={42}
-              height={42}
-              className="rounded-xl shadow-lg ring-1 ring-white/15"
+              width={40}
+              height={40}
+              className="h-9 w-9 shrink-0 rounded-xl shadow-lg ring-1 ring-white/15 sm:h-[42px] sm:w-[42px]"
             />
-            <span className="leading-tight">
-              <span className="block whitespace-nowrap font-display text-[12.5px] font-semibold tracking-[0.16em]">
-                SALAM LIBRARY
+            <span className="min-w-0 leading-tight">
+              <span className="block whitespace-nowrap font-display text-[11px] font-semibold tracking-[0.08em] sm:text-[12.5px] sm:tracking-[0.16em]">
+                <span className="sm:hidden">SALAM</span>
+                <span className="hidden sm:inline">SALAM LIBRARY</span>
               </span>
-              <span className="mt-0.5 hidden whitespace-nowrap text-[9px] uppercase tracking-[0.2em] text-gold-300/90 sm:block">
+              <span className="mt-0.5 hidden whitespace-nowrap text-[9px] uppercase tracking-[0.2em] text-gold-300/90 md:block">
                 Mosquée Salam du Plateau
               </span>
             </span>
@@ -158,7 +136,7 @@ export default async function Home() {
             {content.selfServiceEnabled && (
               <Link
                 href="/borne"
-                className="hidden h-9 items-center gap-2 rounded-xl border border-white/15 bg-white/[0.06] px-3.5 text-[12px] font-semibold text-white/80 transition hover:border-white/25 hover:bg-white/10 hover:text-white sm:inline-flex"
+                className="hidden h-9 items-center gap-2 rounded-xl border border-white/15 bg-white/[0.06] px-3.5 text-[12px] font-semibold text-white/80 transition hover:border-white/25 hover:bg-white/10 hover:text-white md:inline-flex"
               >
                 <Icon name="ticket" className="h-3.5 w-3.5 text-gold-300" />
                 Borne
@@ -166,7 +144,7 @@ export default async function Home() {
             )}
             <Link
               href={spaceHref}
-              className="inline-flex h-9 items-center gap-2 whitespace-nowrap rounded-xl bg-gradient-to-b from-gold-300 to-gold-500 px-4 text-[12px] font-semibold text-brand-950 shadow-[0_10px_24px_-14px_rgb(197_162_83/0.9)] ring-1 ring-inset ring-white/30 transition hover:from-gold-200 hover:to-gold-400"
+              className="inline-flex h-9 items-center gap-1.5 whitespace-nowrap rounded-xl bg-gradient-to-b from-gold-300 to-gold-500 px-3 text-[11.5px] font-semibold text-brand-950 shadow-[0_10px_24px_-14px_rgb(197_162_83/0.9)] ring-1 ring-inset ring-white/30 transition hover:from-gold-200 hover:to-gold-400 sm:gap-2 sm:px-4 sm:text-[12px]"
             >
               <span className="sm:hidden">{user ? spaceLabel : "Espace"}</span>
               <span className="hidden sm:inline">{spaceLabel}</span>
@@ -209,20 +187,6 @@ export default async function Home() {
               </Link>
             </div>
 
-            <div className="mt-9 flex flex-wrap gap-2.5">
-              <span className="chip">
-                <Icon name="mapPin" className="h-3.5 w-3.5 text-gold-300" />
-                Plateau · Abidjan
-              </span>
-              <span className="chip">
-                <Icon name="users" className="h-3.5 w-3.5 text-gold-300" />
-                Abonnés & visiteurs
-              </span>
-              <span className="chip">
-                <Icon name="calendar" className="h-3.5 w-3.5 text-gold-300" />
-                Formules de {shortest} à {longest} mois
-              </span>
-            </div>
           </div>
 
           <div className="relative animate-fade-up lg:pl-4">
@@ -263,71 +227,77 @@ export default async function Home() {
         </div>
       </section>
 
-      <section className="border-b border-brand-900/[0.06] bg-white/60 dark:border-white/[0.06] dark:bg-white/[0.02]">
-        <div className="mx-auto grid max-w-7xl grid-cols-2 gap-x-6 gap-y-6 px-5 py-8 sm:grid-cols-4">
-          {[
-            { icon: "mapPin" as IconName, label: "Lieu", value: "Plateau, Abidjan" },
-            { icon: "calendar" as IconName, label: "Abonnements", value: `${shortest} à ${longest} mois` },
-            { icon: "users" as IconName, label: "Public", value: "Abonnés & visiteurs" },
-            {
-              icon: "ticket" as IconName,
-              label: "Accueil",
-              value: content.selfServiceEnabled ? "Borne libre-service" : "Sur place",
-            },
-          ].map((f) => (
-            <div key={f.label} className="flex items-center gap-3">
-              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-brand-50 text-brand-700 ring-1 ring-brand-900/[0.06] dark:bg-white/[0.05] dark:text-gold-300 dark:ring-white/[0.08]">
-                <Icon name={f.icon} className="h-[18px] w-[18px]" />
-              </span>
-              <span className="min-w-0">
-                <span className="block text-[9.5px] font-semibold uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">
-                  {f.label}
-                </span>
-                <span className="mt-0.5 block text-[12px] font-semibold leading-5 text-slate-800 dark:text-slate-100">
-                  {f.value}
-                </span>
-              </span>
-            </div>
-          ))}
+      <section className="border-b border-brand-900/[0.06] bg-white/70 dark:border-white/[0.06] dark:bg-white/[0.02]">
+        <div className="mx-auto grid max-w-7xl grid-cols-1 gap-4 px-5 py-5 sm:grid-cols-2 sm:gap-5 sm:py-6 lg:grid-cols-4">
+          <a href={mapHref} target="_blank" rel="noopener noreferrer" className="group flex min-w-0 items-center gap-3 rounded-2xl px-2 py-1 transition hover:bg-brand-50/70 dark:hover:bg-white/[0.04]">
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-brand-50 text-brand-700 ring-1 ring-brand-900/[0.06] dark:bg-white/[0.05] dark:text-gold-300 dark:ring-white/[0.08]">
+              <Icon name="mapPin" className="h-[18px] w-[18px]" />
+            </span>
+            <span className="min-w-0">
+              <span className="block text-[9.5px] font-semibold uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">Adresse</span>
+              <span className="mt-0.5 block truncate text-[12px] font-semibold leading-5 text-slate-800 group-hover:text-brand-700 dark:text-slate-100 dark:group-hover:text-gold-300">{content.address}</span>
+            </span>
+          </a>
+          <a href="#acces" className="group flex min-w-0 items-center gap-3 rounded-2xl px-2 py-1 transition hover:bg-brand-50/70 dark:hover:bg-white/[0.04]">
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-gold-500/10 text-gold-700 ring-1 ring-gold-500/15 dark:text-gold-300">
+              <Icon name="clock" className="h-[18px] w-[18px]" />
+            </span>
+            <span className="min-w-0">
+              <span className="block text-[9.5px] font-semibold uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">Horaires</span>
+              <span className="mt-0.5 block truncate text-[12px] font-semibold leading-5 text-slate-800 group-hover:text-brand-700 dark:text-slate-100 dark:group-hover:text-gold-300">{content.hours || "Consulter les informations d'accès"}</span>
+            </span>
+          </a>
+          <div className="flex min-w-0 items-center gap-3 rounded-2xl px-2 py-1">
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-brand-50 text-brand-700 ring-1 ring-brand-900/[0.06] dark:bg-white/[0.05] dark:text-gold-300 dark:ring-white/[0.08]">
+              <Icon name="ticket" className="h-[18px] w-[18px]" />
+            </span>
+            <span className="min-w-0">
+              <span className="block text-[9.5px] font-semibold uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">Abonnements</span>
+              <span className="mt-0.5 block truncate text-[12px] font-semibold leading-5 text-slate-800 dark:text-slate-100">Formules de {shortest} à {longest} mois</span>
+            </span>
+          </div>
+          <div className="flex min-w-0 items-center gap-3 rounded-2xl px-2 py-1">
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-brand-50 text-brand-700 ring-1 ring-brand-900/[0.06] dark:bg-white/[0.05] dark:text-gold-300 dark:ring-white/[0.08]">
+              <Icon name="users" className="h-[18px] w-[18px]" />
+            </span>
+            <span className="min-w-0">
+              <span className="block text-[9.5px] font-semibold uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">Accueil</span>
+              <span className="mt-0.5 block truncate text-[12px] font-semibold leading-5 text-slate-800 dark:text-slate-100">{content.selfServiceEnabled ? "Visiteurs et abonnés" : "Accueil sur place"}</span>
+            </span>
+          </div>
         </div>
       </section>
 
-      <section id="bibliotheque" className="mx-auto max-w-7xl scroll-mt-24 px-5 py-16 lg:py-24">
-        <div className="grid gap-12 lg:grid-cols-[0.92fr_1.08fr] lg:gap-16">
+      <section id="bibliotheque" className="mx-auto max-w-7xl scroll-mt-24 px-5 py-16 lg:py-20">
+        <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-center lg:gap-16">
           <div>
             <p className="eyebrow">La bibliothèque</p>
-            <h2 className="mt-3 font-display text-3xl font-semibold tracking-tight text-slate-900 dark:text-white sm:text-[38px]">
+            <h2 className="mt-3 max-w-xl font-display text-3xl font-semibold tracking-tight text-slate-900 dark:text-white sm:text-[38px]">
               Un lieu de savoir et de rencontre
             </h2>
-            <p className="mt-5 text-[14.5px] leading-8 text-slate-600 dark:text-slate-300">
+            <p className="mt-5 max-w-2xl text-[14.5px] leading-8 text-slate-600 dark:text-slate-300">
               {content.about}
             </p>
             <a
               href="#services"
-              className="mt-7 inline-flex items-center gap-2 text-[13px] font-semibold text-brand-700 transition hover:gap-3 hover:text-brand-800 dark:text-gold-300 dark:hover:text-gold-200"
+              className="mt-6 inline-flex items-center gap-2 text-[13px] font-semibold text-brand-700 transition hover:gap-3 hover:text-brand-800 dark:text-gold-300 dark:hover:text-gold-200"
             >
               Découvrir nos services
               <Icon name="arrowRight" className="h-4 w-4" />
             </a>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            {VALUES.map((v) => (
-              <div
-                key={v.title}
-                className="rounded-3xl border border-brand-900/[0.07] bg-[var(--surface)]/85 p-5 shadow-soft backdrop-blur-xl transition hover:-translate-y-0.5 hover:border-gold-500/30 hover:shadow-lift dark:border-white/[0.08] dark:bg-[var(--surface)]/70 dark:shadow-none"
-              >
-                <span className="grid h-10 w-10 place-items-center rounded-xl bg-gold-500/10 text-gold-700 ring-1 ring-gold-500/15 dark:text-gold-300">
-                  <Icon name={v.icon} className="h-[18px] w-[18px]" />
-                </span>
-                <h3 className="mt-4 text-[13.5px] font-semibold text-slate-900 dark:text-white">
-                  {v.title}
-                </h3>
-                <p className="mt-1.5 text-[12px] leading-6 text-slate-500 dark:text-slate-400">
-                  {v.text}
-                </p>
-              </div>
-            ))}
+          <div className="relative overflow-hidden rounded-[2rem] border border-gold-500/15 bg-gradient-to-br from-brand-900 to-brand-950 p-7 text-white shadow-lift sm:p-9">
+            <div className="pointer-events-none absolute -right-12 -top-16 h-48 w-48 rounded-full bg-gold-400/15 blur-3xl" />
+            <div className="relative">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-gold-300">Au cœur du Plateau</p>
+              <p className="mt-5 font-display text-[28px] font-semibold leading-tight tracking-tight sm:text-[34px]">
+                Lire<span className="text-gold-300">.</span> Chercher<span className="text-gold-300">.</span> Apprendre<span className="text-gold-300">.</span>
+              </p>
+              <p className="mt-4 max-w-sm text-[12.5px] leading-6 text-white/65">
+                Un espace ouvert à la communauté, pensé pour avancer à son rythme.
+              </p>
+            </div>
           </div>
         </div>
       </section>
