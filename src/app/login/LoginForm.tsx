@@ -43,12 +43,12 @@ export default function LoginForm() {
       {/* Vitrine */}
       <div className="relative hidden overflow-hidden lg:block">
         <Image
-          src="/hero-library.png"
-          alt="Bibliothèque de la Mosquée Salam du Plateau"
+          src="/bibliotheque-salam.jpg"
+          alt="Salle de lecture de la Bibliothèque de la Mosquée Salam du Plateau"
           fill
           priority
           sizes="55vw"
-          className="object-cover"
+          className="object-cover object-[64%_center]"
         />
         <div className="absolute inset-0 bg-gradient-to-br from-brand-950/95 via-brand-950/75 to-brand-800/30" />
         <div className="absolute inset-0 pattern-grid opacity-25" />

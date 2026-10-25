@@ -36,12 +36,12 @@ function Frame({
   return (
     <div className="relative min-h-screen overflow-hidden bg-brand-950 px-4 py-8 text-white sm:px-6">
       <Image
-        src="/hero-library.png"
+        src="/bibliotheque-salam.jpg"
         alt=""
         fill
         priority
         sizes="100vw"
-        className="object-cover opacity-25"
+        className="object-cover opacity-20"
       />
       <div className="absolute inset-0 bg-gradient-to-br from-brand-950/95 via-brand-950/85 to-brand-900/55" />
       <div className="absolute inset-0 pattern-grid opacity-20" />
