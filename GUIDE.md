@@ -122,3 +122,12 @@ un abonné peut avoir plusieurs périodes successives (toutes consultables) et p
 | 16 | Absence de doublons (UUID + fenêtre temporelle) | OK |
 | 17 | Sauvegarde / restauration (`pg_dump` / `psql`) | OK, procédure manuelle |
 | — | Absence de module de paiement / caisse / recettes | Vérifié |
+
+## 9. Déploiement
+
+- **Production** : https://salam-library-pro.vercel.app
+- **Code** : https://github.com/hassler10/salam-tech — chaque `git push` sur `main` déclenche un déploiement Vercel.
+- **Base** : PostgreSQL hébergé chez Neon, relié au projet Vercel (variables `DATABASE_URL` et `DATABASE_URL_UNPOOLED`).
+- **Schéma** : après une modification de `src/db/schema.ts`, exécuter
+  `DATABASE_URL="<URL Neon non poolée>" npx drizzle-kit push`.
+- En local, `.env.development.local` pointe vers le PostgreSQL local ; `.env.local` (tiré par Vercel) contient les identifiants cloud et n'est jamais versionné.
