@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser, can } from "@/lib/auth";
 import { dashboardData } from "@/lib/queries";
-import { PageHeader, StatCard, ReportHeader } from "@/components/ui";
+import { PageHeader, StatCard, StatCardIcon, ReportHeader } from "@/components/ui";
 import PrintButton from "@/components/PrintButton";
 import { DailyChart, MonthlyChart, YearlyChart, SplitPie, ReasonsChart, StatusChart } from "@/components/Charts";
 
@@ -22,10 +22,10 @@ export default async function StatistiquesPage() {
         <PrintButton />
       </PageHeader>
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatCard label="Visites aujourd'hui" value={d.counts.today} icon="📅" />
-        <StatCard label="Visites cette semaine" value={d.counts.week} icon="🗓️" tone="gold" />
-        <StatCard label="Visites ce mois" value={d.counts.month} icon="📆" tone="slate" />
-        <StatCard label="Visites cette année" value={d.counts.year} icon="📈" tone="green" />
+        <StatCard label="Visites aujourd'hui" value={d.counts.today} icon={<StatCardIcon name="calendar" />} />
+        <StatCard label="Visites cette semaine" value={d.counts.week} icon={<StatCardIcon name="history" />} tone="gold" />
+        <StatCard label="Visites ce mois" value={d.counts.month} icon={<StatCardIcon name="calendar" />} tone="slate" />
+        <StatCard label="Visites cette année" value={d.counts.year} icon={<StatCardIcon name="chart" />} tone="green" />
       </div>
       <div className="mt-6 grid grid-cols-1 gap-4 xl:grid-cols-2">
         <DailyChart data={d.daily} />

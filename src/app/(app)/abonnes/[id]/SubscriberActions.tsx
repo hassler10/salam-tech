@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { todayIso } from "@/lib/subscriptions";
+import { Icon } from "@/components/icons";
 
 type Type = { id: number; name: string; durationMonths: number };
 
@@ -72,7 +73,10 @@ export default function SubscriberActions({
         <button onClick={save} className="btn-ghost w-full">Enregistrer les modifications</button>
       </div>
 
-      <button onClick={() => window.print()} className="btn-gold w-full">🖨️ Imprimer la fiche</button>
+      <button onClick={() => window.print()} className="btn-gold w-full">
+        <Icon name="printer" className="h-4 w-4" />
+        Imprimer la fiche
+      </button>
       {msg && <p className="text-sm font-medium text-[#166534] dark:text-[#c5a253]">{msg}</p>}
     </div>
   );

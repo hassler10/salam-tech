@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Icon } from "@/components/icons";
 
 type RowResult = { line: number; cardNumber: string; name: string; action: string; message?: string };
 type Summary = { crees: number; majs: number; ignores: number; erreurs: number };
@@ -94,10 +95,12 @@ export default function ImportClient({ strict, imported }: { strict: boolean; im
             Mettre à jour les abonnés déjà présents
           </label>
           <button className="btn-ghost" disabled={!csv.trim() || busy} onClick={() => call(true)}>
-            👁️ Vérifier sans enregistrer
+            <Icon name="search" className="h-4 w-4" />
+            Vérifier sans enregistrer
           </button>
           <button className="btn-primary" disabled={!csv.trim() || busy} onClick={() => call(false)}>
-            {busy ? "Traitement…" : "⬆️ Lancer l'import"}
+            <Icon name="upload" className="h-4 w-4" />
+            {busy ? "Traitement…" : "Lancer l'import"}
           </button>
         </div>
         {error && <p className="mt-3 rounded-xl bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</p>}
@@ -184,7 +187,7 @@ export default function ImportClient({ strict, imported }: { strict: boolean; im
         </label>
         {strict && imported === 0 && (
           <p className="mt-2 rounded-xl bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800">
-            ⚠️ Attention : aucun abonné importé. Avec le mode strict activé, la borne refusera tout le monde.
+            Attention : aucun abonné importé. Avec le mode strict activé, la borne refusera tout le monde.
           </p>
         )}
       </div>

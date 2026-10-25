@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { getVisitorDetail } from "@/lib/queries";
-import { PageHeader, StatCard, ReportHeader } from "@/components/ui";
+import { PageHeader, StatCard, StatCardIcon, ReportHeader } from "@/components/ui";
 import PrintButton from "@/components/PrintButton";
 
 export const dynamic = "force-dynamic";
@@ -27,10 +27,10 @@ export default async function FicheVisiteur({ params }: { params: Promise<{ id: 
       </PageHeader>
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatCard label="Visites totales" value={data.visits.length} icon="📚" />
-        <StatCard label="Cette semaine" value={since(weekStart)} icon="🗓️" tone="gold" />
-        <StatCard label="Ce mois" value={since(monthStart)} icon="📆" tone="slate" />
-        <StatCard label="Cette année" value={since(yearStart)} icon="📈" tone="green" />
+        <StatCard label="Visites totales" value={data.visits.length} icon={<StatCardIcon name="book" />} />
+        <StatCard label="Cette semaine" value={since(weekStart)} icon={<StatCardIcon name="history" />} tone="gold" />
+        <StatCard label="Ce mois" value={since(monthStart)} icon={<StatCardIcon name="calendar" />} tone="slate" />
+        <StatCard label="Cette année" value={since(yearStart)} icon={<StatCardIcon name="chart" />} tone="green" />
       </div>
 
       <div className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-3">
@@ -38,7 +38,7 @@ export default async function FicheVisiteur({ params }: { params: Promise<{ id: 
           <h3 className="mb-3 text-sm font-bold">Informations</h3>
           <dl className="space-y-2 text-sm">
             <div><dt className="label">Contact</dt><dd>{v.phone ?? "—"}</dd></div>
-            <div><dt className="label">Organisme</dt><dd>{v.organization ?? "—"}</dd></div>
+            <div><dt className="label">Fonction</dt><dd>{v.organization ?? "—"}</dd></div>
             <div><dt className="label">Dernière visite</dt><dd>{dates[0] ? dates[0].toLocaleString("fr-FR") : "—"}</dd></div>
           </dl>
           <h3 className="mb-2 mt-4 text-sm font-bold">Motifs de visite</h3>

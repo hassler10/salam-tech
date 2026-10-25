@@ -46,7 +46,7 @@ export async function GET(req: Request) {
       .where(conds.length ? and(...conds) : undefined)
       .orderBy(desc(visits.occurredAt));
     rows = [
-      ["Identifiant visite", "Type", "Nom et prénoms", "Motif", "Organisme", "Date et heure", "Agent", "Synchronisation"],
+      ["Identifiant visite", "Type", "Nom et prénoms", "Motif", "Fonction", "Date et heure", "Agent", "Synchronisation"],
       ...data.map((v) => [
         v.uid,
         v.personType === "abonne" ? "Abonné" : "Visiteur",
@@ -89,7 +89,7 @@ export async function GET(req: Request) {
   } else if (type === "visiteurs") {
     const data = await db.select().from(visitors);
     rows = [
-      ["Identifiant", "Nom", "Prénoms", "Contact", "Organisme", "Créé le"],
+      ["Identifiant", "Nom", "Prénoms", "Contact", "Fonction", "Créé le"],
       ...data.map((v) => [
         v.code,
         v.lastName,

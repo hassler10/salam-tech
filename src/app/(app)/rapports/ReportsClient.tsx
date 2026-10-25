@@ -2,11 +2,29 @@
 
 import { useState } from "react";
 import { todayIso } from "@/lib/subscriptions";
+import { Icon, type IconName } from "@/components/icons";
 
 function isoDaysAgo(n: number) {
   const d = new Date();
   d.setDate(d.getDate() - n);
   return d.toISOString().slice(0, 10);
+}
+
+const EXPORTS: { icon: IconName; label: string; params: Record<string, string> }[] = [
+  { icon: "check", label: "Liste des abonnés actifs", params: { type: "abonnes", status: "actif" } },
+  { icon: "clock", label: "Abonnements bientôt expirés", params: { type: "abonnes", status: "bientot" } },
+  { icon: "alert", label: "Abonnements expirés", params: { type: "abonnes", status: "expire" } },
+  { icon: "users", label: "Tous les abonnés", params: { type: "abonnes" } },
+  { icon: "userPlus", label: "Rapport des visiteurs", params: { type: "visiteurs" } },
+  { icon: "list", label: "Rapport des motifs de visite", params: { type: "motifs" } },
+];
+
+function Tile({ name }: { name: IconName }) {
+  return (
+    <span className="grid h-9 w-9 place-items-center rounded-xl bg-brand-600/10 text-brand-700 ring-1 ring-brand-600/15 dark:bg-brand-400/10 dark:text-brand-300 dark:ring-brand-400/20">
+      <Icon name={name} className="h-[18px] w-[18px]" />
+    </span>
+  );
 }
 
 export default function ReportsClient() {
@@ -38,39 +56,32 @@ export default function ReportsClient() {
           </select>
         </div>
         <div className="flex items-end">
-          <a className="btn-primary w-full" href={url({ type: "visites", from, to, personType })}>⬇️ Exporter la fréquentation (CSV)</a>
+          <a className="btn-primary w-full" href={url({ type: "visites", from, to, personType })}>
+            <Icon name="download" className="h-4 w-4" />
+            Exporter la fréquentation (CSV)
+          </a>
         </div>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {quick.map((q) => (
-          <a key={q.label} className="card block hover:-translate-y-0.5 hover:shadow-md" href={url({ type: "visites", from: q.from, to: q.to })}>
-            <p className="text-lg">🧾</p>
-            <p className="mt-1 font-bold text-[#14532d] dark:text-[#c5a253]">{q.label}</p>
-            <p className="text-xs text-slate-500">{q.from} → {q.to}</p>
+          <a key={q.label} className="card block transition duration-300 hover:-translate-y-0.5 hover:shadow-lift" href={url({ type: "visites", from: q.from, to: q.to })}>
+            <Tile name="calendar" />
+            <p className="mt-3 font-semibold text-slate-800 dark:text-white">{q.label}</p>
+            <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">{q.from} → {q.to}</p>
           </a>
         ))}
-        <a className="card block hover:-translate-y-0.5 hover:shadow-md" href={url({ type: "abonnes", status: "actif" })}>
-          <p className="text-lg">✅</p><p className="mt-1 font-bold text-[#14532d] dark:text-[#c5a253]">Liste des abonnés actifs</p>
-        </a>
-        <a className="card block hover:-translate-y-0.5 hover:shadow-md" href={url({ type: "abonnes", status: "bientot" })}>
-          <p className="text-lg">⏳</p><p className="mt-1 font-bold text-[#14532d] dark:text-[#c5a253]">Abonnements bientôt expirés</p>
-        </a>
-        <a className="card block hover:-translate-y-0.5 hover:shadow-md" href={url({ type: "abonnes", status: "expire" })}>
-          <p className="text-lg">⛔</p><p className="mt-1 font-bold text-[#14532d] dark:text-[#c5a253]">Abonnements expirés</p>
-        </a>
-        <a className="card block hover:-translate-y-0.5 hover:shadow-md" href={url({ type: "abonnes" })}>
-          <p className="text-lg">👥</p><p className="mt-1 font-bold text-[#14532d] dark:text-[#c5a253]">Tous les abonnés</p>
-        </a>
-        <a className="card block hover:-translate-y-0.5 hover:shadow-md" href={url({ type: "visiteurs" })}>
-          <p className="text-lg">🚶</p><p className="mt-1 font-bold text-[#14532d] dark:text-[#c5a253]">Rapport des visiteurs</p>
-        </a>
-        <a className="card block hover:-translate-y-0.5 hover:shadow-md" href={url({ type: "motifs" })}>
-          <p className="text-lg">📌</p><p className="mt-1 font-bold text-[#14532d] dark:text-[#c5a253]">Rapport des motifs de visite</p>
-        </a>
-        <button className="card text-left hover:-translate-y-0.5 hover:shadow-md" onClick={() => window.print()}>
-          <p className="text-lg">🖨️</p><p className="mt-1 font-bold text-[#14532d] dark:text-[#c5a253]">Imprimer / exporter en PDF</p>
-          <p className="text-xs text-slate-500">Utilise l&apos;impression du navigateur (avec logo et en-tête).</p>
+        {EXPORTS.map((e) => (
+          <a key={e.label} className="card block transition duration-300 hover:-translate-y-0.5 hover:shadow-lift" href={url(e.params)}>
+            <Tile name={e.icon} />
+            <p className="mt-3 font-semibold text-slate-800 dark:text-white">{e.label}</p>
+            <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">Export CSV · UTF-8</p>
+          </a>
+        ))}
+        <button className="card text-left transition duration-300 hover:-translate-y-0.5 hover:shadow-lift" onClick={() => window.print()}>
+          <Tile name="printer" />
+          <p className="mt-3 font-semibold text-slate-800 dark:text-white">Imprimer / exporter en PDF</p>
+          <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">Impression navigateur avec logo et en-tête.</p>
         </button>
       </div>
 

@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { listQueue, syncQueue, removeFromQueue, putCache, getCache, type QueuedVisit } from "@/lib/offline";
+import { Icon } from "@/components/icons";
 
 type Differed = { id: number; displayName: string; occurredAt: string; createdAt: string; agentName: string | null };
 
@@ -56,8 +57,14 @@ export default function SyncClient({ differed }: { differed: Differed[] }) {
           {online ? "● Connexion disponible" : "● Hors connexion"}
         </span>
         <span className="text-sm text-slate-600 dark:text-slate-300">{queue.length} opération(s) en attente</span>
-        <button className="btn-primary" onClick={sync} disabled={!online || queue.length === 0}>🔄 Synchroniser maintenant</button>
-        <button className="btn-ghost" onClick={reloadCache} disabled={!online}>⬇️ Recharger les données hors connexion</button>
+        <button className="btn-primary" onClick={sync} disabled={!online || queue.length === 0}>
+          <Icon name="refresh" className="h-4 w-4" />
+          Synchroniser maintenant
+        </button>
+        <button className="btn-ghost" onClick={reloadCache} disabled={!online}>
+          <Icon name="download" className="h-4 w-4" />
+          Recharger les données hors connexion
+        </button>
         {msg && <p className="w-full text-sm font-medium text-[#166534] dark:text-[#c5a253]">{msg}</p>}
         <p className="w-full text-xs text-slate-500">{cacheInfo}</p>
       </div>

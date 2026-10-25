@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { enqueueVisit, getCache, listQueue, syncQueue, type QueuedVisit } from "@/lib/offline";
+import { Icon } from "@/components/icons";
 
 type Person = { id: number; code: string; lastName: string; firstName: string };
 type RecentVisit = {
@@ -165,7 +166,7 @@ export default function ReceptionClient({
       } else if (!res.ok) {
         setMessage({ type: "err", text: json.error ?? "Enregistrement impossible." });
       } else {
-        setMessage({ type: "ok", text: `✅ Visite de ${displayName} enregistrée avec succès.` });
+        setMessage({ type: "ok", text: `Visite de ${displayName} enregistrée avec succès.` });
         reset();
         router.refresh();
       }
@@ -195,27 +196,51 @@ export default function ReceptionClient({
           <div className="mb-5 grid grid-cols-2 gap-3">
             <button
               onClick={() => setTab("abonne")}
-              className={`rounded-2xl border-2 p-4 text-left transition ${
+              className={`rounded-2xl border p-4 text-left transition ${
                 tab === "abonne"
-                  ? "border-[#166534] bg-[#166534]/5"
-                  : "border-slate-200 hover:border-slate-300 dark:border-slate-700"
+                  ? "border-brand-600/30 bg-brand-600/[0.06] shadow-sm dark:border-brand-400/30 dark:bg-brand-400/[0.08]"
+                  : "border-slate-200 hover:border-brand-600/25 hover:bg-brand-50/40 dark:border-white/10 dark:hover:border-gold-400/25 dark:hover:bg-white/[0.03]"
               }`}
             >
-              <p className="text-2xl">🎫</p>
-              <p className="mt-1 font-bold text-[#14532d] dark:text-[#c5a253]">Visite d&apos;un abonné</p>
-              <p className="text-xs text-slate-500">Rechercher par nom, prénoms ou identifiant.</p>
+              <span
+                className={`grid h-9 w-9 place-items-center rounded-xl ${
+                  tab === "abonne"
+                    ? "bg-brand-600/10 text-brand-700 dark:bg-brand-400/15 dark:text-brand-300"
+                    : "bg-slate-100 text-slate-400 dark:bg-white/[0.05] dark:text-slate-400"
+                }`}
+              >
+                <Icon name="ticket" className="h-4 w-4" />
+              </span>
+              <p className="mt-2.5 font-display text-[13.5px] font-semibold text-brand-900 dark:text-white">
+                Visite d&apos;un abonné
+              </p>
+              <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">
+                Rechercher par nom, prénoms ou identifiant.
+              </p>
             </button>
             <button
               onClick={() => setTab("visiteur")}
-              className={`rounded-2xl border-2 p-4 text-left transition ${
+              className={`rounded-2xl border p-4 text-left transition ${
                 tab === "visiteur"
-                  ? "border-[#c5a253] bg-[#c5a253]/10"
-                  : "border-slate-200 hover:border-slate-300 dark:border-slate-700"
+                  ? "border-gold-500/40 bg-gold-500/[0.08] shadow-sm dark:border-gold-400/35 dark:bg-gold-400/[0.08]"
+                  : "border-slate-200 hover:border-gold-500/30 hover:bg-gold-50/40 dark:border-white/10 dark:hover:border-gold-400/25 dark:hover:bg-white/[0.03]"
               }`}
             >
-              <p className="text-2xl">🚶</p>
-              <p className="mt-1 font-bold text-[#14532d] dark:text-[#c5a253]">Visite d&apos;un visiteur</p>
-              <p className="text-xs text-slate-500">Visiteur occasionnel, avec ou sans fiche.</p>
+              <span
+                className={`grid h-9 w-9 place-items-center rounded-xl ${
+                  tab === "visiteur"
+                    ? "bg-gold-500/15 text-gold-700 dark:bg-gold-400/15 dark:text-gold-300"
+                    : "bg-slate-100 text-slate-400 dark:bg-white/[0.05] dark:text-slate-400"
+                }`}
+              >
+                <Icon name="userPlus" className="h-4 w-4" />
+              </span>
+              <p className="mt-2.5 font-display text-[13.5px] font-semibold text-brand-900 dark:text-white">
+                Visite d&apos;un visiteur
+              </p>
+              <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">
+                Visiteur occasionnel, avec ou sans fiche.
+              </p>
             </button>
           </div>
 
@@ -234,7 +259,7 @@ export default function ReceptionClient({
                 }}
               />
               {results.length > 0 && !selected && (
-                <div className="mt-2 max-h-56 overflow-y-auto rounded-xl border border-slate-200 dark:border-slate-700">
+                <div className="mt-2 max-h-56 overflow-y-auto rounded-xl border border-slate-200/80 bg-white/95 shadow-lg backdrop-blur dark:border-white/10 dark:bg-[#0c1a13]/95">
                   {results.map((p) => (
                     <button
                       key={p.id}
@@ -243,17 +268,20 @@ export default function ReceptionClient({
                         setQuery(`${p.lastName} ${p.firstName}`);
                         setResults([]);
                       }}
-                      className="flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-slate-50 dark:hover:bg-slate-800"
+                      className="flex w-full items-center justify-between px-3.5 py-2.5 text-left text-sm transition hover:bg-brand-50/60 dark:hover:bg-white/[0.05]"
                     >
-                      <span>{p.lastName} {p.firstName}</span>
-                      <span className="font-mono text-xs text-slate-400">{p.code}</span>
+                      <span className="font-medium">{p.lastName} {p.firstName}</span>
+                      <span className="font-mono text-[11px] text-slate-400">{p.code}</span>
                     </button>
                   ))}
                 </div>
               )}
               {selected && (
-                <p className="mt-2 rounded-xl bg-emerald-50 px-3 py-2 text-sm text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300">
-                  Sélectionné : <strong>{selected.lastName} {selected.firstName}</strong> ({selected.code})
+                <p className="mt-2 flex items-center gap-2 rounded-xl border border-brand-600/15 bg-brand-50/70 px-3.5 py-2.5 text-sm text-brand-800 dark:border-brand-400/20 dark:bg-brand-400/10 dark:text-brand-200">
+                  <Icon name="check" className="h-4 w-4 shrink-0" />
+                  <span>
+                    Sélectionné : <strong>{selected.lastName} {selected.firstName}</strong> ({selected.code})
+                  </span>
                 </p>
               )}
             </div>
@@ -273,8 +301,13 @@ export default function ReceptionClient({
                   <input className="input" value={phone} onChange={(e) => setPhone(e.target.value)} />
                 </div>
                 <div>
-                  <label className="label">Organisme (facultatif)</label>
-                  <input className="input" value={organization} onChange={(e) => setOrganization(e.target.value)} />
+                  <label className="label">Fonction (facultatif)</label>
+                  <input
+                    className="input"
+                    value={organization}
+                    onChange={(e) => setOrganization(e.target.value)}
+                    placeholder="Ex. : Enseignant"
+                  />
                 </div>
                 <label className="flex items-center gap-2 text-sm text-slate-600 sm:col-span-2 dark:text-slate-300">
                   <input type="checkbox" checked={createProfile} onChange={(e) => setCreateProfile(e.target.checked)} />
@@ -294,12 +327,12 @@ export default function ReceptionClient({
 
             {message && (
               <p
-                className={`rounded-xl px-3 py-2 text-sm font-medium ${
+                className={`rounded-xl border px-3.5 py-2.5 text-sm font-medium ${
                   message.type === "ok"
-                    ? "bg-emerald-50 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300"
+                    ? "border-brand-600/15 bg-brand-50/80 text-brand-800 dark:border-brand-400/20 dark:bg-brand-400/10 dark:text-brand-200"
                     : message.type === "warn"
-                      ? "bg-amber-50 text-amber-800 dark:bg-amber-900/30 dark:text-amber-200"
-                      : "bg-rose-50 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300"
+                      ? "border-amber-500/20 bg-amber-50/80 text-amber-800 dark:border-amber-400/20 dark:bg-amber-400/10 dark:text-amber-200"
+                      : "border-rose-500/20 bg-rose-50/80 text-rose-700 dark:border-rose-400/20 dark:bg-rose-400/10 dark:text-rose-300"
                 }`}
               >
                 {message.text}
@@ -317,7 +350,7 @@ export default function ReceptionClient({
             </div>
 
             {!online && (
-              <p className="rounded-xl bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:bg-rose-900/30 dark:text-rose-300">
+              <p className="rounded-xl border border-rose-500/20 bg-rose-50/80 px-3.5 py-2.5 text-sm text-rose-700 dark:border-rose-400/20 dark:bg-rose-400/10 dark:text-rose-300">
                 Mode hors connexion actif. Les visites sont stockées localement (IndexedDB) et synchronisées au retour d&apos;Internet.
               </p>
             )}
@@ -330,9 +363,9 @@ export default function ReceptionClient({
               <h3 className="text-sm font-bold">Opérations en attente ({pending.length})</h3>
               <button onClick={doSync} className="btn-gold px-3 py-1.5 text-xs">Synchroniser</button>
             </div>
-            <ul className="space-y-1 text-sm">
+            <ul className="space-y-1.5 text-sm">
               {pending.map((p) => (
-                <li key={p.uid} className="flex justify-between rounded-lg bg-slate-50 px-3 py-2 dark:bg-slate-800">
+                <li key={p.uid} className="flex justify-between gap-3 rounded-xl border border-slate-200/60 bg-white/50 px-3 py-2 dark:border-white/[0.06] dark:bg-white/[0.03]">
                   <span>{p.displayName} — {p.personType}</span>
                   <span className="text-xs text-slate-500">{new Date(p.occurredAt).toLocaleString("fr-FR")}</span>
                 </li>
@@ -349,10 +382,10 @@ export default function ReceptionClient({
         <ul className="space-y-2">
           {recent.length === 0 && <li className="text-sm text-slate-500">Aucune visite enregistrée.</li>}
           {recent.map((v) => (
-            <li key={v.id} className="rounded-xl bg-slate-50 px-3 py-2 text-sm dark:bg-slate-800">
+            <li key={v.id} className="rounded-xl border border-slate-200/60 bg-white/50 px-3 py-2.5 text-sm dark:border-white/[0.06] dark:bg-white/[0.03]">
               <div className="flex items-center justify-between gap-2">
                 <span className="font-semibold">{v.displayName}</span>
-                <span className={`badge ${v.personType === "abonne" ? "bg-emerald-100 text-emerald-800" : "bg-[#c5a253]/20 text-[#8a6d26]"}`}>
+                <span className={`badge ${v.personType === "abonne" ? "bg-brand-600/10 text-brand-800 dark:bg-brand-400/10 dark:text-brand-300" : "bg-gold-500/15 text-gold-800 dark:bg-gold-400/10 dark:text-gold-300"}`}>
                   {v.personType === "abonne" ? "Abonné" : "Visiteur"}
                 </span>
               </div>

@@ -1,22 +1,42 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
+import { Inter, Sora } from "next/font/google";
 import "./globals.css";
 
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+});
+
+const sora = Sora({
+  subsets: ["latin"],
+  variable: "--font-sora",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
-  title: "SALAM LIBRARY PRO",
+  title: {
+    default: "Salam Library Pro — Bibliothèque de la Mosquée Salam du Plateau",
+    template: "%s · Salam Library Pro",
+  },
   description:
-    "Plateforme de gestion des abonnés et des visiteurs — Bibliothèque de la Mosquée Salam du Plateau, Abidjan.",
+    "Plateforme moderne de gestion des abonnés, des visiteurs et de la fréquentation — Bibliothèque de la Mosquée Salam du Plateau, Abidjan.",
+  applicationName: "Salam Library Pro",
   manifest: "/manifest.webmanifest",
   icons: { icon: "/logo.png", apple: "/logo.png" },
+  appleWebApp: { capable: true, title: "Salam Library", statusBarStyle: "black-translucent" },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#166534",
+  themeColor: "#0b4a2f",
+  width: "device-width",
+  initialScale: 1,
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="fr" suppressHydrationWarning>
+    <html lang="fr" className={`${inter.variable} ${sora.variable}`} suppressHydrationWarning>
       <head>
         <script
           dangerouslySetInnerHTML={{
@@ -24,7 +44,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           }}
         />
       </head>
-      <body className="text-slate-900 antialiased dark:text-slate-100">{children}</body>
+      <body className="font-sans antialiased">{children}</body>
     </html>
   );
 }

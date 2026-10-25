@@ -4,8 +4,8 @@
   "description": "Gestion des abonnés et visiteurs — Bibliothèque de la Mosquée Salam du Plateau",
   "start_url": "/dashboard",
   "display": "standalone",
-  "background_color": "#f5f7f3",
-  "theme_color": "#166534",
+  "background_color": "#f4f9f5",
+  "theme_color": "#0b4a2f",
   "icons": [
     { "src": "/logo.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
     { "src": "/logo.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" }

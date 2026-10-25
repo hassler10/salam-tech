@@ -4,7 +4,7 @@ import { subscriptionTypes } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import QRCode from "qrcode";
 import { getSubscriber } from "@/lib/queries";
-import { PageHeader, StatCard, StatusBadge, ReportHeader } from "@/components/ui";
+import { PageHeader, StatCard, StatCardIcon, StatusBadge, ReportHeader } from "@/components/ui";
 import SubscriberActions from "./SubscriberActions";
 
 export const dynamic = "force-dynamic";
@@ -40,10 +40,10 @@ export default async function FicheAbonne({ params }: { params: Promise<{ id: st
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
         <div className="space-y-5 lg:col-span-2">
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-            <StatCard label="Visites totales" value={data.visits.length} icon="📚" />
-            <StatCard label="Cette semaine" value={countSince(dates, weekStart)} icon="🗓️" tone="gold" />
-            <StatCard label="Ce mois" value={countSince(dates, monthStart)} icon="📆" tone="slate" />
-            <StatCard label="Cette année" value={countSince(dates, yearStart)} icon="📈" tone="green" />
+            <StatCard label="Visites totales" value={data.visits.length} icon={<StatCardIcon name="book" />} />
+            <StatCard label="Cette semaine" value={countSince(dates, weekStart)} icon={<StatCardIcon name="history" />} tone="gold" />
+            <StatCard label="Ce mois" value={countSince(dates, monthStart)} icon={<StatCardIcon name="calendar" />} tone="slate" />
+            <StatCard label="Cette année" value={countSince(dates, yearStart)} icon={<StatCardIcon name="chart" />} tone="green" />
           </div>
 
           <div className="card">

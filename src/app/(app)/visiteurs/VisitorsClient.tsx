@@ -70,7 +70,7 @@ export default function VisitorsClient({ rows }: { rows: Row[] }) {
           <input className="input" required placeholder="Nom *" value={form.lastName} onChange={(e) => setForm({ ...form, lastName: e.target.value })} />
           <input className="input" required placeholder="Prénoms *" value={form.firstName} onChange={(e) => setForm({ ...form, firstName: e.target.value })} />
           <input className="input" placeholder="Contact" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
-          <input className="input" placeholder="Organisme" value={form.organization} onChange={(e) => setForm({ ...form, organization: e.target.value })} />
+          <input className="input" placeholder="Fonction" value={form.organization} onChange={(e) => setForm({ ...form, organization: e.target.value })} />
           <button className="btn-primary sm:col-span-4">Créer la fiche</button>
         </form>
       )}
@@ -79,7 +79,7 @@ export default function VisitorsClient({ rows }: { rows: Row[] }) {
       <div className="table-wrap">
         <table className="data">
           <thead>
-            <tr><th>Identifiant</th><th>Nom et prénoms</th><th>Contact</th><th>Organisme</th><th>Visites</th><th>Dernière visite</th><th></th></tr>
+            <tr><th>Identifiant</th><th>Nom et prénoms</th><th>Contact</th><th>Fonction</th><th>Visites</th><th>Dernière visite</th><th></th></tr>
           </thead>
           <tbody>
             {current.length === 0 && <tr><td colSpan={7} className="py-8 text-center text-slate-500">Aucun visiteur.</td></tr>}

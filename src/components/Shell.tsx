@@ -5,26 +5,33 @@ import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
 import { listQueue, syncQueue, putCache } from "@/lib/offline";
+import { Icon, type IconName } from "./icons";
 
 export type NavUser = { fullName: string; role: string; username: string };
 
-const NAV: { href: string; label: string; icon: string; roles: string[]; group: string }[] = [
-  { href: "/dashboard", label: "Tableau de bord + Accueil", icon: "📊", roles: ["admin", "responsable"], group: "Pilotage" },
-  { href: "/accueil", label: "Accueil (plein écran)", icon: "🛎️", roles: ["admin", "responsable", "agent"], group: "Pilotage" },
-  { href: "/abonnes", label: "Gestion des abonnés", icon: "👥", roles: ["admin", "responsable", "agent"], group: "Personnes" },
-  { href: "/visiteurs", label: "Gestion des visiteurs", icon: "🚶", roles: ["admin", "responsable", "agent"], group: "Personnes" },
-  { href: "/visites", label: "Historique des visites", icon: "🗂️", roles: ["admin", "responsable", "agent"], group: "Personnes" },
-  { href: "/abonnements", label: "Suivi des abonnements", icon: "⏳", roles: ["admin", "responsable", "agent"], group: "Abonnements" },
-  { href: "/types-abonnement", label: "Types et durées", icon: "🏷️", roles: ["admin"], group: "Abonnements" },
-  { href: "/import", label: "Import du registre", icon: "⬆️", roles: ["admin"], group: "Abonnements" },
-  { href: "/statistiques", label: "Statistiques générales", icon: "📈", roles: ["admin", "responsable"], group: "Analyse" },
-  { href: "/statistiques-individuelles", label: "Statistiques individuelles", icon: "🔎", roles: ["admin", "responsable"], group: "Analyse" },
-  { href: "/rapports", label: "Rapports & exportations", icon: "🧾", roles: ["admin", "responsable"], group: "Analyse" },
-  { href: "/synchronisation", label: "Centre de synchronisation", icon: "🔄", roles: ["admin", "responsable", "agent"], group: "Système" },
-  { href: "/utilisateurs", label: "Gestion des utilisateurs", icon: "🔐", roles: ["admin"], group: "Système" },
-  { href: "/audit", label: "Journal d'audit", icon: "📝", roles: ["admin"], group: "Système" },
-  { href: "/parametres", label: "Paramètres", icon: "⚙️", roles: ["admin"], group: "Système" },
+const NAV: { href: string; label: string; icon: IconName; roles: string[]; group: string }[] = [
+  { href: "/dashboard", label: "Tableau de bord", icon: "grid", roles: ["admin", "responsable"], group: "Pilotage" },
+  { href: "/accueil", label: "Accueil (plein écran)", icon: "bell", roles: ["admin", "responsable", "agent"], group: "Pilotage" },
+  { href: "/abonnes", label: "Gestion des abonnés", icon: "users", roles: ["admin", "responsable", "agent"], group: "Personnes" },
+  { href: "/visiteurs", label: "Gestion des visiteurs", icon: "userPlus", roles: ["admin", "responsable", "agent"], group: "Personnes" },
+  { href: "/visites", label: "Historique des visites", icon: "history", roles: ["admin", "responsable", "agent"], group: "Personnes" },
+  { href: "/abonnements", label: "Suivi des abonnements", icon: "clock", roles: ["admin", "responsable", "agent"], group: "Abonnements" },
+  { href: "/types-abonnement", label: "Types et durées", icon: "tag", roles: ["admin"], group: "Abonnements" },
+  { href: "/import", label: "Import du registre", icon: "upload", roles: ["admin"], group: "Abonnements" },
+  { href: "/statistiques", label: "Statistiques générales", icon: "chart", roles: ["admin", "responsable"], group: "Analyse" },
+  { href: "/statistiques-individuelles", label: "Statistiques individuelles", icon: "search", roles: ["admin", "responsable"], group: "Analyse" },
+  { href: "/rapports", label: "Rapports & exportations", icon: "file", roles: ["admin", "responsable"], group: "Analyse" },
+  { href: "/synchronisation", label: "Centre de synchronisation", icon: "refresh", roles: ["admin", "responsable", "agent"], group: "Système" },
+  { href: "/utilisateurs", label: "Gestion des utilisateurs", icon: "shield", roles: ["admin"], group: "Système" },
+  { href: "/audit", label: "Journal d'audit", icon: "list", roles: ["admin"], group: "Système" },
+  { href: "/parametres", label: "Paramètres", icon: "settings", roles: ["admin"], group: "Système" },
 ];
+
+const ROLE_LABEL: Record<string, string> = {
+  admin: "Administrateur",
+  responsable: "Responsable",
+  agent: "Agent d'accueil",
+};
 
 export default function Shell({ user, children }: { user: NavUser; children: React.ReactNode }) {
   const pathname = usePathname();
@@ -88,107 +95,213 @@ export default function Shell({ user, children }: { user: NavUser; children: Rea
 
   const items = NAV.filter((n) => n.roles.includes(user.role));
   const groups = [...new Set(items.map((i) => i.group))];
+  const section = items.find((i) => pathname === i.href || pathname.startsWith(i.href + "/"))?.label;
+  const initials = user.fullName
+    .split(/\s+/)
+    .map((w) => w[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
 
   return (
-    <div className="min-h-screen lg:flex">
-      {/* Sidebar */}
+    <div className="min-h-screen">
       <aside
-        className={`no-print fixed inset-y-0 left-0 z-40 w-72 transform overflow-y-auto bg-[#14532d] text-white transition-transform lg:static lg:translate-x-0 ${
+        className={`no-print fixed inset-y-0 left-0 z-50 flex w-[280px] flex-col overflow-hidden bg-gradient-to-b from-brand-800 via-brand-900 to-brand-950 text-white shadow-2xl transition-transform duration-300 lg:translate-x-0 ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="flex items-center gap-3 border-b border-white/10 px-5 py-4">
-          <Image src="/logo.png" alt="Logo CMP" width={44} height={44} className="rounded-lg bg-white p-0.5" />
-          <div>
-            <p className="text-sm font-extrabold leading-tight tracking-wide">SALAM LIBRARY PRO</p>
-            <p className="text-[11px] text-[#c5a253]">Mosquée Salam du Plateau</p>
+        <div className="pointer-events-none absolute inset-0 pattern-dots opacity-25" />
+        <div className="pointer-events-none absolute -left-16 top-24 h-56 w-56 rounded-full bg-brand-500/20 blur-3xl" />
+        <div className="pointer-events-none absolute -right-20 bottom-10 h-56 w-56 rounded-full bg-gold-500/10 blur-3xl" />
+
+        <div className="relative flex items-center gap-3 px-6 pb-5 pt-6">
+          <Image
+            src="/logo.png"
+            alt="Logo de la Bibliothèque Salam"
+            width={46}
+            height={46}
+            className="rounded-2xl shadow-lg ring-1 ring-white/15"
+          />
+          <div className="min-w-0">
+            <p className="font-display text-[14px] font-semibold leading-tight tracking-[0.08em]">
+              SALAM LIBRARY
+            </p>
+            <p className="mt-0.5 truncate text-[10.5px] uppercase tracking-[0.2em] text-gold-300">
+              Mosquée Salam du Plateau
+            </p>
           </div>
+          <button
+            onClick={() => setOpen(false)}
+            className="ml-auto rounded-lg p-1.5 text-white/50 transition hover:bg-white/10 hover:text-white lg:hidden"
+            aria-label="Fermer le menu"
+          >
+            <Icon name="close" className="h-5 w-5" />
+          </button>
         </div>
-        <nav className="space-y-5 px-3 py-4">
-          {groups.map((g) => (
-            <div key={g}>
-              <p className="px-3 pb-2 text-[10px] font-bold uppercase tracking-widest text-white/40">{g}</p>
-              <div className="space-y-1">
-                {items
-                  .filter((i) => i.group === g)
-                  .map((i) => {
-                    const active = pathname === i.href || pathname.startsWith(i.href + "/");
-                    return (
-                      <Link
-                        key={i.href}
-                        href={i.href}
-                        onClick={() => setOpen(false)}
-                        className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition ${
-                          active
-                            ? "bg-[#c5a253] font-semibold text-[#14532d] shadow"
-                            : "text-white/85 hover:bg-white/10"
-                        }`}
-                      >
-                        <span>{i.icon}</span>
-                        <span>{i.label}</span>
-                      </Link>
-                    );
-                  })}
+
+        <div className="mx-6 h-px bg-gradient-to-r from-transparent via-white/15 to-transparent" />
+
+        <nav className="relative flex-1 overflow-y-auto px-3 py-5">
+          <div className="space-y-6">
+            {groups.map((g) => (
+              <div key={g}>
+                <p className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-white/35">
+                  {g}
+                </p>
+                <div className="space-y-1">
+                  {items
+                    .filter((i) => i.group === g)
+                    .map((i) => {
+                      const active = pathname === i.href || pathname.startsWith(i.href + "/");
+                      return (
+                        <Link
+                          key={i.href}
+                          href={i.href}
+                          onClick={() => setOpen(false)}
+                          aria-current={active ? "page" : undefined}
+                          className={`group relative flex items-center gap-3 rounded-xl px-3 py-2 text-[13px] transition ${
+                            active
+                              ? "bg-white/[0.09] font-semibold text-white ring-1 ring-inset ring-white/10"
+                              : "text-white/65 hover:bg-white/[0.05] hover:text-white"
+                          }`}
+                        >
+                          <span
+                            className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg transition ${
+                              active
+                                ? "bg-gold-400/15 text-gold-300"
+                                : "bg-white/[0.04] text-white/45 group-hover:text-white/80"
+                            }`}
+                          >
+                            <Icon name={i.icon} className="h-[17px] w-[17px]" />
+                          </span>
+                          <span className="truncate">{i.label}</span>
+                          {active && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-gold-400" />}
+                        </Link>
+                      );
+                    })}
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </nav>
-        <div className="px-3 pb-6">
-          <a
+
+        <div className="relative px-4 pb-5">
+          <Link
             href="/borne"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-3 rounded-xl border border-[#c5a253]/50 px-3 py-2.5 text-sm text-[#c5a253] transition hover:bg-[#c5a253]/10"
+            className="group flex items-center gap-3 rounded-2xl border border-gold-400/25 bg-gradient-to-br from-gold-400/15 to-transparent p-3.5 transition hover:border-gold-400/50 hover:from-gold-400/20"
           >
-            <span>🎫</span>
-            <span>Ouvrir la borne publique</span>
-          </a>
-          <p className="mt-4 px-2 text-[11px] text-white/40">Aucun module financier — version 1.0</p>
+            <span className="grid h-9 w-9 place-items-center rounded-xl bg-gold-400/15 text-gold-300">
+              <Icon name="ticket" className="h-[18px] w-[18px]" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-[12.5px] font-semibold text-white">Borne publique</span>
+              <span className="block text-[10.5px] text-white/45">Enregistrement libre-service</span>
+            </span>
+            <Icon name="arrowRight" className="h-4 w-4 text-gold-300/70 transition group-hover:translate-x-0.5" />
+          </Link>
+          <p className="mt-4 px-1 text-[10px] tracking-wide text-white/30">
+            Version 1.0 · Aucun module financier
+          </p>
         </div>
       </aside>
 
       {open && (
-        <div className="fixed inset-0 z-30 bg-black/40 lg:hidden" onClick={() => setOpen(false)} />
+        <div
+          className="no-print fixed inset-0 z-40 bg-brand-950/60 backdrop-blur-sm lg:hidden"
+          onClick={() => setOpen(false)}
+        />
       )}
 
-      <div className="flex min-w-0 flex-1 flex-col">
-        <header className="no-print sticky top-0 z-20 flex items-center gap-3 border-b border-slate-200 bg-white/90 px-4 py-3 backdrop-blur dark:border-slate-700 dark:bg-slate-900/90">
-          <button className="btn-ghost px-3 py-1.5 lg:hidden" onClick={() => setOpen(true)} aria-label="Menu">
-            ☰
+      <div className="flex min-h-screen min-w-0 flex-col lg:pl-[280px]">
+        <header className="no-print sticky top-0 z-30 flex items-center gap-3 border-b border-brand-900/[0.06] bg-[var(--app-bg)]/75 px-4 py-3 backdrop-blur-xl dark:border-white/[0.06] sm:px-6">
+          <button
+            className="grid h-9 w-9 place-items-center rounded-xl border border-slate-200/80 bg-white/70 text-slate-600 transition hover:bg-white lg:hidden dark:border-white/10 dark:bg-white/5 dark:text-slate-300"
+            onClick={() => setOpen(true)}
+            aria-label="Ouvrir le menu"
+          >
+            <Icon name="menu" className="h-5 w-5" />
           </button>
+
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-bold text-[#14532d] dark:text-[#c5a253]">
-              Bibliothèque de la Mosquée Salam du Plateau
+            <p className="truncate font-display text-[13.5px] font-semibold text-brand-900 dark:text-white">
+              {section ?? "Bibliothèque Salam du Plateau"}
             </p>
-            <p className="truncate text-xs text-slate-500 dark:text-slate-400">Abidjan, Côte d&apos;Ivoire</p>
+            <p className="truncate text-[11px] text-slate-500 dark:text-slate-400">
+              Abidjan, Côte d&apos;Ivoire
+            </p>
           </div>
+
           <span
-            className={`badge ${
+            className={`hidden items-center gap-2 rounded-full border px-3 py-1.5 text-[11px] font-semibold sm:inline-flex ${
               online
-                ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300"
-                : "bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300"
+                ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+                : "border-rose-500/20 bg-rose-500/10 text-rose-600 dark:text-rose-300"
             }`}
             title="État de la connexion"
           >
-            {online ? "● En ligne" : "● Hors connexion"}
+            <span className="relative flex h-1.5 w-1.5">
+              <span
+                className={`absolute inline-flex h-full w-full rounded-full opacity-70 animate-pulse-soft ${
+                  online ? "bg-emerald-400" : "bg-rose-400"
+                }`}
+              />
+              <span
+                className={`relative inline-flex h-1.5 w-1.5 rounded-full ${
+                  online ? "bg-emerald-500" : "bg-rose-500"
+                }`}
+              />
+            </span>
+            {online ? "En ligne" : "Hors connexion"}
           </span>
+
           {pending > 0 && (
-            <Link href="/synchronisation" className="badge bg-amber-100 text-amber-900 dark:bg-amber-900/40 dark:text-amber-200">
+            <Link
+              href="/synchronisation"
+              className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/25 bg-amber-500/10 px-3 py-1.5 text-[11px] font-semibold text-amber-700 dark:text-amber-300"
+            >
+              <Icon name="refresh" className="h-3.5 w-3.5" />
               {pending} en attente
             </Link>
           )}
-          <button onClick={toggleTheme} className="btn-ghost px-3 py-1.5" title="Mode clair / sombre">
-            {dark ? "☀️" : "🌙"}
+
+          <button
+            onClick={toggleTheme}
+            className="grid h-9 w-9 place-items-center rounded-xl border border-slate-200/80 bg-white/70 text-slate-500 transition hover:bg-white hover:text-brand-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:text-gold-300"
+            title="Mode clair / sombre"
+            aria-label="Changer de thème"
+          >
+            <Icon name={dark ? "sun" : "moon"} className="h-[18px] w-[18px]" />
           </button>
-          <div className="hidden text-right sm:block">
-            <p className="text-sm font-semibold leading-tight">{user.fullName}</p>
-            <p className="text-[11px] uppercase tracking-wide text-[#c5a253]">{user.role}</p>
+
+          <div className="mx-1 hidden h-8 w-px bg-slate-200/80 sm:block dark:bg-white/10" />
+
+          <div className="hidden items-center gap-2.5 sm:flex">
+            <span className="grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-brand-600 to-brand-900 text-[11px] font-bold text-gold-200 ring-1 ring-white/20">
+              {initials}
+            </span>
+            <div className="hidden text-right md:block">
+              <p className="max-w-[160px] truncate text-[12.5px] font-semibold leading-tight text-slate-800 dark:text-slate-100">
+                {user.fullName}
+              </p>
+              <p className="text-[10px] uppercase tracking-[0.12em] text-gold-700 dark:text-gold-300">
+                {ROLE_LABEL[user.role] ?? user.role}
+              </p>
+            </div>
           </div>
-          <button onClick={logout} className="btn-ghost px-3 py-1.5" title="Se déconnecter">
-            ⎋
+
+          <button
+            onClick={logout}
+            className="grid h-9 w-9 place-items-center rounded-xl border border-slate-200/80 bg-white/70 text-slate-500 transition hover:border-rose-300 hover:bg-rose-50 hover:text-rose-600 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:border-rose-500/40 dark:hover:bg-rose-500/10 dark:hover:text-rose-300"
+            title="Se déconnecter"
+            aria-label="Se déconnecter"
+          >
+            <Icon name="logout" className="h-[18px] w-[18px]" />
           </button>
         </header>
-        <main className="animate-fade-up flex-1 p-4 sm:p-6">{children}</main>
+
+        <main className="animate-fade-up mx-auto w-full max-w-[1600px] flex-1 p-4 sm:p-6 lg:p-8">{children}</main>
       </div>
     </div>
   );

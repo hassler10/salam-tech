@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { listSubscribers } from "@/lib/queries";
 import { getThresholds } from "@/lib/seed";
-import { PageHeader, StatCard, StatusBadge, ReportHeader } from "@/components/ui";
+import { PageHeader, StatCard, StatCardIcon, StatusBadge, ReportHeader } from "@/components/ui";
 import PrintButton from "@/components/PrintButton";
 
 export const dynamic = "force-dynamic";
@@ -28,10 +28,10 @@ export default async function SuiviAbonnements() {
       </PageHeader>
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatCard label="Actifs" value={groups[3].items.length} icon="✅" />
-        <StatCard label="Expiration proche" value={groups[1].items.length} icon="⏳" tone="amber" />
-        <StatCard label="Expiration imminente" value={groups[0].items.length} icon="⚠️" tone="gold" />
-        <StatCard label="Expirés" value={groups[2].items.length} icon="⛔" tone="rose" />
+        <StatCard label="Actifs" value={groups[3].items.length} icon={<StatCardIcon name="check" />} />
+        <StatCard label="Expiration proche" value={groups[1].items.length} icon={<StatCardIcon name="clock" />} tone="amber" />
+        <StatCard label="Expiration imminente" value={groups[0].items.length} icon={<StatCardIcon name="clock" />} tone="gold" />
+        <StatCard label="Expirés" value={groups[2].items.length} icon={<StatCardIcon name="alert" />} tone="rose" />
       </div>
 
       <div className="mt-6 space-y-6">
