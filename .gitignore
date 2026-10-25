@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+
+# Next.js
+.next/
+out/
+
+# Environnement (ne jamais committer)
+.env
+.env*.local
+*.pem
+
+# Build & cache
+*.tsbuildinfo
+.turbo/
+.eslintcache
+
+# Système
+.DS_Store
+Thumbs.db
+
+# Journaux
+*.log
+npm-debug.log*
