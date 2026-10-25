@@ -7,6 +7,8 @@ import { PUBLIC_DEFAULTS } from "@/lib/public-defaults";
 import { getBranding } from "@/lib/branding";
 import { PageHeader } from "@/components/ui";
 import SettingsClient from "./SettingsClient";
+import AccountPassword from "./AccountPassword";
+import DataReset from "./DataReset";
 import ReasonsClient from "./ReasonsClient";
 
 export const dynamic = "force-dynamic";
@@ -35,9 +37,11 @@ export default async function ParametresPage() {
     <div className="space-y-5">
       <PageHeader
         title="Paramètres de la bibliothèque"
-        subtitle="Identité visuelle, vitrine publique, seuils d'alerte et motifs de visite."
+        subtitle="Identité visuelle, vitrine publique, compte, réinitialisation des données et motifs de visite."
       />
       <SettingsClient settings={settings} logoUrl={branding.logoUrl} coverUrl={branding.coverUrl} />
+      <AccountPassword username={user?.username ?? ""} />
+      <DataReset />
       <ReasonsClient reasons={reasons} />
     </div>
   );
