@@ -7,7 +7,14 @@ import { getCurrentUser, can, logAudit } from "@/lib/auth";
 const MAX_LABEL = 120;
 
 export async function GET() {
-  const rows = await db.select().from(visitReasons).orderBy(visitReasons.id);
+  const user = await getCurrentUser();
+  const rows = user
+    ? await db.select().from(visitReasons).orderBy(visitReasons.id)
+    : await db
+        .select({ id: visitReasons.id, label: visitReasons.label, active: visitReasons.active })
+        .from(visitReasons)
+        .where(eq(visitReasons.active, true))
+        .orderBy(visitReasons.id);
   return NextResponse.json({ data: rows });
 }
 

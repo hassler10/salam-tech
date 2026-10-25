@@ -5,14 +5,9 @@ import { useEffect, useState, useCallback } from "react";
 import { Icon } from "@/components/icons";
 
 type Me = {
-  code: string;
-  firstName: string;
-  lastName: string;
-  typeName: string | null;
-  endDate: string | null;
-  daysLeft: number | null;
   status: string;
   statusLabel: string;
+  firstName: string;
 };
 
 const TONES: Record<string, string> = {
@@ -28,18 +23,23 @@ function Frame({
   children,
   libraryName,
   city,
+  logoUrl,
+  coverUrl,
 }: {
   children: React.ReactNode;
   libraryName: string;
   city: string;
+  logoUrl: string;
+  coverUrl: string;
 }) {
   return (
     <div className="relative min-h-screen overflow-hidden bg-brand-950 px-4 py-8 text-white sm:px-6">
       <Image
-        src="/bibliotheque-salam.jpg"
+        src={coverUrl}
         alt=""
         fill
         priority
+        unoptimized
         sizes="100vw"
         className="object-cover opacity-20"
       />
@@ -51,11 +51,12 @@ function Frame({
       <div className="relative mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-3xl flex-col justify-center">
         <div className="mb-6 flex flex-col items-center gap-3 text-center">
           <Image
-            src="/logo.png"
-            alt="Logo"
+            src={logoUrl}
+            alt={`Logo de ${libraryName}`}
             width={72}
             height={72}
-            className="rounded-2xl shadow-2xl ring-1 ring-white/20"
+            unoptimized
+            className="rounded-2xl object-contain shadow-2xl ring-1 ring-white/20"
           />
           <div>
             <p className="font-display text-[13px] font-semibold tracking-[0.16em] text-white">{libraryName}</p>
@@ -84,11 +85,15 @@ export default function KioskClient({
   reasons,
   libraryName,
   city,
+  logoUrl,
+  coverUrl,
 }: {
   enabled: boolean;
   reasons: string[];
   libraryName: string;
   city: string;
+  logoUrl: string;
+  coverUrl: string;
 }) {
   const [mode, setMode] = useState<"choix" | "abonne" | "visiteur">("choix");
   const [code, setCode] = useState("");
@@ -178,7 +183,7 @@ export default function KioskClient({
 
   if (!enabled) {
     return (
-      <Frame libraryName={libraryName} city={city}>
+      <Frame libraryName={libraryName} city={city} logoUrl={logoUrl} coverUrl={coverUrl}>
         <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-8 text-center">
           <span className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-slate-200/70 text-slate-500">
             <Icon name="alert" className="h-6 w-6" />
@@ -194,7 +199,7 @@ export default function KioskClient({
 
   if (done) {
     return (
-      <Frame libraryName={libraryName} city={city}>
+      <Frame libraryName={libraryName} city={city} logoUrl={logoUrl} coverUrl={coverUrl}>
         <div className="animate-fade-up py-4 text-center">
           <span className="mx-auto grid h-20 w-20 place-items-center rounded-full bg-brand-600/10 text-brand-700 ring-8 ring-brand-600/[0.05]">
             <Icon name="check" className="h-9 w-9" strokeWidth={2.2} />
@@ -216,7 +221,7 @@ export default function KioskClient({
 
   if (mode === "choix") {
     return (
-      <Frame libraryName={libraryName} city={city}>
+      <Frame libraryName={libraryName} city={city} logoUrl={logoUrl} coverUrl={coverUrl}>
         <p className="mb-5 text-center text-sm text-slate-500">
           Bienvenue. Indiquez votre situation pour commencer.
         </p>
@@ -251,7 +256,7 @@ export default function KioskClient({
 
   if (mode === "abonne") {
     return (
-      <Frame libraryName={libraryName} city={city}>
+      <Frame libraryName={libraryName} city={city} logoUrl={logoUrl} coverUrl={coverUrl}>
         {!me ? (
           <form onSubmit={identify} className="space-y-4">
             <div className="text-center">
@@ -302,15 +307,8 @@ export default function KioskClient({
                 <Icon name="check" className="h-6 w-6" />
               </span>
               <p className="mt-3 text-[10.5px] uppercase tracking-[0.18em] text-slate-400">Bienvenue</p>
-              <p className="mt-1 font-display text-2xl font-semibold text-brand-900">{me.firstName} {me.lastName}</p>
-              <p className="font-mono text-[11px] text-slate-400">{me.code}</p>
+              <p className="mt-1 font-display text-2xl font-semibold text-brand-900">{me.firstName} {lastName}</p>
               <span className={`badge mt-3 ${TONES[me.status] ?? "bg-slate-200"}`}>{me.statusLabel}</span>
-              {me.endDate && (
-                <p className="mt-2 text-sm text-slate-600">
-                  {me.typeName} — valide jusqu&apos;au <strong>{me.endDate}</strong>
-                  {me.daysLeft !== null && me.daysLeft >= 0 && <> ({me.daysLeft} jour(s) restant(s))</>}
-                </p>
-              )}
               {me.status === "expire" && (
                 <p className="mt-2 text-sm font-semibold text-rose-700">
                   Votre abonnement est expiré. Vous pouvez enregistrer votre visite,
@@ -343,7 +341,7 @@ export default function KioskClient({
   }
 
   return (
-    <Frame libraryName={libraryName} city={city}>
+    <Frame libraryName={libraryName} city={city} logoUrl={logoUrl} coverUrl={coverUrl}>
       <form
         className="space-y-4"
         onSubmit={(e) => { e.preventDefault(); register("visiteur"); }}

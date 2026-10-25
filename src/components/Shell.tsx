@@ -4,10 +4,12 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
-import { listQueue, syncQueue, putCache } from "@/lib/offline";
+import { listQueue, syncQueue, putCache, clearCache } from "@/lib/offline";
 import { Icon, type IconName } from "./icons";
 
 export type NavUser = { fullName: string; role: string; username: string };
+
+export type ShellBranding = { name: string; shortName: string; org: string; logoUrl: string };
 
 const NAV: { href: string; label: string; icon: IconName; roles: string[]; group: string }[] = [
   { href: "/dashboard", label: "Tableau de bord", icon: "grid", roles: ["admin", "responsable"], group: "Pilotage" },
@@ -33,7 +35,15 @@ const ROLE_LABEL: Record<string, string> = {
   agent: "Agent d'accueil",
 };
 
-export default function Shell({ user, children }: { user: NavUser; children: React.ReactNode }) {
+export default function Shell({
+  user,
+  branding,
+  children,
+}: {
+  user: NavUser;
+  branding: ShellBranding;
+  children: React.ReactNode;
+}) {
   const pathname = usePathname();
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -88,9 +98,13 @@ export default function Shell({ user, children }: { user: NavUser; children: Rea
   };
 
   const logout = async () => {
-    await fetch("/api/auth/logout", { method: "POST" });
-    router.push("/login");
-    router.refresh();
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } finally {
+      await clearCache("offline-data").catch(() => undefined);
+      router.push("/login");
+      router.refresh();
+    }
   };
 
   const items = NAV.filter((n) => n.roles.includes(user.role));
@@ -116,18 +130,19 @@ export default function Shell({ user, children }: { user: NavUser; children: Rea
 
         <div className="relative flex items-center gap-3 px-6 pb-5 pt-6">
           <Image
-            src="/logo.png"
-            alt="Logo de la Bibliothèque Salam"
+            src={branding.logoUrl}
+            alt={`Logo de ${branding.name}`}
             width={46}
             height={46}
-            className="rounded-2xl shadow-lg ring-1 ring-white/15"
+            unoptimized
+            className="rounded-2xl object-contain shadow-lg ring-1 ring-white/15"
           />
           <div className="min-w-0">
             <p className="font-display text-[14px] font-semibold leading-tight tracking-[0.08em]">
-              SALAM LIBRARY
+              {branding.shortName}
             </p>
             <p className="mt-0.5 truncate text-[10.5px] uppercase tracking-[0.2em] text-gold-300">
-              Mosquée Salam du Plateau
+              {branding.org}
             </p>
           </div>
           <button
@@ -226,7 +241,7 @@ export default function Shell({ user, children }: { user: NavUser; children: Rea
 
           <div className="min-w-0 flex-1">
             <p className="truncate font-display text-[13.5px] font-semibold text-brand-900 dark:text-white">
-              {section ?? "Bibliothèque Salam du Plateau"}
+              {section ?? branding.name}
             </p>
             <p className="truncate text-[11px] text-slate-500 dark:text-slate-400">
               Abidjan, Côte d&apos;Ivoire

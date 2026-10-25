@@ -13,7 +13,16 @@ const FEATURES = [
   { icon: "shield", title: "3 rôles sécurisés", text: "Admin, responsable et agent d'accueil" },
 ] as const;
 
-export default function LoginForm() {
+type LoginBranding = {
+  name: string;
+  shortName: string;
+  org: string;
+  city: string;
+  logoUrl: string;
+  coverUrl: string;
+};
+
+export default function LoginForm({ branding }: { branding: LoginBranding }) {
   const router = useRouter();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -49,10 +58,11 @@ export default function LoginForm() {
       {/* Vitrine */}
       <div className="relative hidden overflow-hidden lg:block">
         <Image
-          src="/bibliotheque-salam.jpg"
-          alt="Salle de lecture de la Bibliothèque de la Mosquée Salam du Plateau"
+          src={branding.coverUrl}
+          alt={`Salle de lecture — ${branding.name}`}
           fill
           priority
+          unoptimized
           sizes="55vw"
           className="object-cover object-[64%_center]"
         />
@@ -64,16 +74,17 @@ export default function LoginForm() {
         <div className="relative flex h-full flex-col justify-between p-10 text-white xl:p-14">
           <div className="flex items-center gap-3">
             <Image
-              src="/logo.png"
-              alt="Logo"
+              src={branding.logoUrl}
+              alt={`Logo de ${branding.name}`}
               width={52}
               height={52}
-              className="rounded-2xl shadow-xl ring-1 ring-white/20"
+              unoptimized
+              className="rounded-2xl object-contain shadow-xl ring-1 ring-white/20"
             />
             <div>
-              <p className="font-display text-[13px] font-semibold tracking-[0.18em]">SALAM LIBRARY PRO</p>
+              <p className="font-display text-[13px] font-semibold tracking-[0.18em]">{branding.shortName}</p>
               <p className="mt-0.5 text-[10.5px] uppercase tracking-[0.22em] text-gold-300">
-                Mosquée Salam du Plateau
+                {branding.org}
               </p>
             </div>
           </div>
@@ -110,7 +121,7 @@ export default function LoginForm() {
           </div>
 
           <div className="flex items-center justify-between text-[10.5px] uppercase tracking-[0.18em] text-white/35">
-            <span>Abidjan · Côte d&apos;Ivoire</span>
+            <span>{branding.city}</span>
             <span>Édition 2026</span>
           </div>
         </div>
@@ -131,13 +142,20 @@ export default function LoginForm() {
           </Link>
 
           <div className="mb-7 flex items-center gap-3 lg:hidden">
-            <Image src="/logo.png" alt="Logo" width={46} height={46} className="rounded-2xl shadow-lg" />
+            <Image
+              src={branding.logoUrl}
+              alt={`Logo de ${branding.name}`}
+              width={46}
+              height={46}
+              unoptimized
+              className="rounded-2xl object-contain shadow-lg"
+            />
             <div>
               <p className="font-display text-[13px] font-semibold tracking-[0.14em] text-white">
-                SALAM LIBRARY
+                {branding.shortName}
               </p>
               <p className="text-[10px] uppercase tracking-[0.2em] text-gold-300">
-                Mosquée Salam du Plateau
+                {branding.org}
               </p>
             </div>
           </div>
@@ -215,7 +233,7 @@ export default function LoginForm() {
           </div>
 
           <p className="mt-6 text-center text-[10.5px] text-slate-400 dark:text-slate-500">
-            © 2026 Bibliothèque de la Mosquée Salam du Plateau · Abidjan
+            © 2026 {branding.name} · {branding.city}
           </p>
         </div>
       </div>

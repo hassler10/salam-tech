@@ -14,7 +14,7 @@ export async function POST(req: Request) {
   if ((settings.self_service_enabled ?? "1") !== "1") {
     return NextResponse.json({ error: "La borne est désactivée." }, { status: 403 });
   }
-  if (!rateLimit(`visit:${clientIp(req)}`, 30, 10 * 60 * 1000)) {
+  if (!(await rateLimit(`visit:${clientIp(req)}`, 30, 10 * 60 * 1000))) {
     return NextResponse.json(
       { error: "Trop d'enregistrements successifs. Adressez-vous à l'agent d'accueil." },
       { status: 429 },
@@ -129,7 +129,7 @@ export async function POST(req: Request) {
 }
 
 export async function GET(req: Request) {
-  if (!rateLimit(`self-config:${clientIp(req)}`, 120, 10 * 60 * 1000)) {
+  if (!(await rateLimit(`self-config:${clientIp(req)}`, 120, 10 * 60 * 1000))) {
     return NextResponse.json({ error: "Trop de requêtes." }, { status: 429 });
   }
   const rows = await db.select().from(visitReasons).where(eq(visitReasons.active, true));

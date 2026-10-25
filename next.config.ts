@@ -1,24 +1,5 @@
 import type { NextConfig } from "next";
 
-const isProd = process.env.NODE_ENV === "production";
-
-const contentSecurityPolicy = [
-  "default-src 'self'",
-  "base-uri 'self'",
-  "object-src 'none'",
-  "frame-ancestors 'none'",
-  "frame-src 'none'",
-  "form-action 'self'",
-  "img-src 'self' data: blob:",
-  "font-src 'self'",
-  "style-src 'self' 'unsafe-inline'",
-  "script-src 'self' 'unsafe-inline'",
-  "connect-src 'self'",
-  "manifest-src 'self'",
-  "worker-src 'self'",
-  "upgrade-insecure-requests",
-].join("; ");
-
 const securityHeaders = [
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "X-Frame-Options", value: "DENY" },
@@ -41,13 +22,16 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/:path*",
-        headers: isProd
-          ? [...securityHeaders, { key: "Content-Security-Policy", value: contentSecurityPolicy }]
-          : securityHeaders,
+        headers: securityHeaders,
       },
       {
         source: "/api/:path*",
         headers: [{ key: "Cache-Control", value: "private, no-store, max-age=0" }],
+      },
+      {
+        // Les visuels de marque sont publics et versionnés dans l'URL.
+        source: "/api/branding/:path*",
+        headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }],
       },
       {
         source: "/login",

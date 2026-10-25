@@ -1,33 +1,57 @@
-type Entry = { count: number; resetAt: number };
+import { createHash } from "crypto";
+import { db } from "@/db";
+import { sql } from "drizzle-orm";
 
-const buckets = new Map<string, Entry>();
-const MAX_BUCKETS = 50_000;
-let lastSweep = 0;
+let storageReady: Promise<void> | null = null;
+let lastCleanup = 0;
 
-function sweep(now: number) {
-  if (now - lastSweep < 60_000) return;
-  lastSweep = now;
-  for (const [key, entry] of buckets) {
-    if (now > entry.resetAt) buckets.delete(key);
+async function ensureStorage() {
+  if (!storageReady) {
+    storageReady = db.execute(sql`
+      CREATE TABLE IF NOT EXISTS rate_limit_buckets (
+        bucket_hash varchar(64) PRIMARY KEY,
+        hit_count integer NOT NULL,
+        reset_at bigint NOT NULL
+      )
+    `).then(() => undefined).catch((error) => {
+      storageReady = null;
+      throw error;
+    });
   }
-  if (buckets.size > MAX_BUCKETS) buckets.clear();
+  await storageReady;
 }
 
 /**
- * Limitation de débit en mémoire (par instance).
- * Limite : protège la borne publique contre l'énumération des identifiants.
+ * Compteur partagé entre les instances grâce à PostgreSQL.
+ * En cas d'indisponibilité du stockage, l'appel échoue fermé (pas de contournement).
  */
-export function rateLimit(key: string, max: number, windowMs: number): boolean {
+export async function rateLimit(key: string, max: number, windowMs: number): Promise<boolean> {
   const now = Date.now();
-  sweep(now);
-  const e = buckets.get(key);
-  if (!e || now > e.resetAt) {
-    buckets.set(key, { count: 1, resetAt: now + windowMs });
-    return true;
+  await ensureStorage();
+
+  const hash = createHash("sha256").update(key).digest("hex");
+  const resetAt = now + windowMs;
+  const result = await db.execute(sql`
+    INSERT INTO rate_limit_buckets (bucket_hash, hit_count, reset_at)
+    VALUES (${hash}, 1, ${resetAt})
+    ON CONFLICT (bucket_hash) DO UPDATE SET
+      hit_count = CASE
+        WHEN rate_limit_buckets.reset_at <= ${now} THEN 1
+        ELSE LEAST(rate_limit_buckets.hit_count + 1, ${max + 1})
+      END,
+      reset_at = CASE
+        WHEN rate_limit_buckets.reset_at <= ${now} THEN ${resetAt}
+        ELSE rate_limit_buckets.reset_at
+      END
+    RETURNING hit_count
+  `);
+
+  if (now - lastCleanup > 10 * 60 * 1000) {
+    lastCleanup = now;
+    await db.execute(sql`DELETE FROM rate_limit_buckets WHERE reset_at < ${now - 60 * 60 * 1000}`);
   }
-  if (e.count >= max) return false;
-  e.count++;
-  return true;
+
+  return Number(result.rows[0]?.hit_count ?? max + 1) <= max;
 }
 
 function sanitizeIp(value: string | null): string | null {

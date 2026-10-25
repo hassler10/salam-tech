@@ -20,6 +20,7 @@ export type QueuedVisit = {
 const DB_NAME = "salam-library";
 const STORE = "pending_visits";
 const CACHE_STORE = "cache";
+const CACHE_TTL_MS = 8 * 60 * 60 * 1000;
 
 function openDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
@@ -71,15 +72,26 @@ export async function putCache(key: string, value: unknown) {
 
 export async function getCache<T>(key: string): Promise<T | null> {
   try {
-    const r = await tx<{ key: string; value: T } | undefined>(
+    const r = await tx<{ key: string; value: T; at: number } | undefined>(
       CACHE_STORE,
       "readonly",
-      (s) => s.get(key) as IDBRequest<{ key: string; value: T } | undefined>,
+      (s) => s.get(key) as IDBRequest<{ key: string; value: T; at: number } | undefined>,
     );
-    return r?.value ?? null;
+    if (!r) return null;
+    if (Date.now() - r.at > CACHE_TTL_MS) {
+      await clearCache(key);
+      return null;
+    }
+    return r.value;
   } catch {
     return null;
   }
+}
+
+export async function clearCache(key?: string) {
+  await tx(CACHE_STORE, "readwrite", (s) =>
+    key ? s.delete(key) as unknown as IDBRequest<undefined> : s.clear() as unknown as IDBRequest<undefined>,
+  );
 }
 
 export type SyncReport = { synced: number; duplicates: number; failed: number };

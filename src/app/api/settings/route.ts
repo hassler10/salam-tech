@@ -5,8 +5,11 @@ import { getCurrentUser, can, logAudit } from "@/lib/auth";
 
 const TEXT_LIMITS: Record<string, number> = {
   library_name: 120,
+  library_short_name: 40,
+  library_subtitle: 80,
   library_city: 80,
   library_tagline: 160,
+  library_hero_intro: 300,
   library_about: 2000,
   library_address: 200,
   opening_hours: 200,

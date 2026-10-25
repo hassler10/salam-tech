@@ -1,6 +1,9 @@
 import type { Metadata, Viewport } from "next";
+import { connection } from "next/server";
+import { headers } from "next/headers";
 import type { ReactNode } from "react";
 import { Inter, Sora } from "next/font/google";
+import { getBranding } from "@/lib/branding";
 import "./globals.css";
 
 const inter = Inter({
@@ -15,18 +18,48 @@ const sora = Sora({
   display: "swap",
 });
 
-export const metadata: Metadata = {
-  title: {
-    default: "Salam Library Pro — Bibliothèque de la Mosquée Salam du Plateau",
-    template: "%s · Salam Library Pro",
-  },
-  description:
-    "Plateforme moderne de gestion des abonnés, des visiteurs et de la fréquentation — Bibliothèque de la Mosquée Salam du Plateau, Abidjan.",
-  applicationName: "Salam Library Pro",
-  manifest: "/manifest.webmanifest",
-  icons: { icon: "/logo.png", apple: "/logo.png" },
-  appleWebApp: { capable: true, title: "Salam Library", statusBarStyle: "black-translucent" },
-};
+function siteUrl(): URL {
+  const explicit = process.env.NEXT_PUBLIC_SITE_URL;
+  if (explicit) {
+    try {
+      return new URL(explicit);
+    } catch {
+      // ignore les valeurs invalides et retomber sur l'URL d'hébergement
+    }
+  }
+  const vercel = process.env.VERCEL_PROJECT_PRODUCTION_URL;
+  if (vercel) return new URL(`https://${vercel}`);
+  return new URL("http://localhost:3000");
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+  const branding = await getBranding();
+  const description =
+    branding.about.length > 170 ? `${branding.about.slice(0, 167)}…` : branding.about;
+  return {
+    metadataBase: siteUrl(),
+    title: {
+      default: `${branding.shortName} — ${branding.name}`,
+      template: `%s · ${branding.shortName}`,
+    },
+    description,
+    applicationName: branding.shortName,
+    manifest: "/manifest.webmanifest",
+    icons: { icon: branding.logoUrl, apple: branding.logoUrl },
+    appleWebApp: {
+      capable: true,
+      title: branding.shortName,
+      statusBarStyle: "black-translucent",
+    },
+    openGraph: {
+      title: `${branding.shortName} — ${branding.name}`,
+      description: branding.tagline,
+      images: [{ url: branding.coverUrl, alt: branding.name }],
+      type: "website",
+      locale: "fr_CI",
+    },
+  };
+}
 
 export const viewport: Viewport = {
   themeColor: "#0b4a2f",
@@ -34,11 +67,14 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default async function RootLayout({ children }: { children: ReactNode }) {
+  await connection();
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
   return (
     <html lang="fr" className={`${inter.variable} ${sora.variable}`} suppressHydrationWarning>
       <head>
         <script
+          nonce={nonce}
           dangerouslySetInnerHTML={{
             __html: `try{if(localStorage.getItem('slp-theme')==='dark'){document.documentElement.classList.add('dark')}}catch(e){}`,
           }}

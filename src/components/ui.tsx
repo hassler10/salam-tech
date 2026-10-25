@@ -1,11 +1,12 @@
 import Link from "next/link";
+import { getBranding } from "@/lib/branding";
 import { STATUS_COLOR, STATUS_LABEL, type SubStatus } from "@/lib/subscriptions";
 import { Icon, type IconName } from "./icons";
 
-export function PageHeader({
+export async function PageHeader({
   title,
   subtitle,
-  eyebrow = "Salam Library Pro",
+  eyebrow,
   children,
 }: {
   title: string;
@@ -13,12 +14,13 @@ export function PageHeader({
   eyebrow?: string;
   children?: React.ReactNode;
 }) {
+  const resolvedEyebrow = eyebrow ?? (await getBranding()).shortName;
   return (
     <div className="mb-7 flex flex-wrap items-end justify-between gap-4">
       <div className="min-w-0">
         <p className="eyebrow">
           <span className="h-1 w-6 rounded-full bg-gradient-to-r from-gold-500 to-gold-300" />
-          {eyebrow}
+          {resolvedEyebrow}
         </p>
         <h1 className="mt-2 font-display text-[26px] font-semibold leading-tight tracking-tight text-slate-900 sm:text-[30px] dark:text-white">
           {title}
@@ -116,13 +118,14 @@ export function StatusBadge({ status }: { status: SubStatus }) {
   return <span className={`badge ${STATUS_COLOR[status]}`}>{STATUS_LABEL[status]}</span>;
 }
 
-export function ReportHeader({ title, period }: { title: string; period?: string }) {
+export async function ReportHeader({ title, period }: { title: string; period?: string }) {
+  const branding = await getBranding();
   return (
     <div className="mb-4 hidden items-center gap-4 border-b-2 border-brand-700 pb-3 print:flex">
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src="/logo.png" alt="Logo" width={56} height={56} className="rounded-xl" />
+      <img src={branding.logoUrl} alt={`Logo de ${branding.name}`} width={56} height={56} className="rounded-xl object-contain" />
       <div>
-        <p className="text-lg font-bold text-brand-800">Bibliothèque de la Mosquée Salam du Plateau</p>
+        <p className="text-lg font-bold text-brand-800">{branding.name}</p>
         <p className="text-sm">{title}</p>
         {period && <p className="text-xs">Période : {period}</p>}
         <p className="text-xs">Généré le {new Date().toLocaleString("fr-FR")}</p>

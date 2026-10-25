@@ -4,6 +4,7 @@ import { subscriptionTypes } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import QRCode from "qrcode";
 import { getSubscriber } from "@/lib/queries";
+import { getBranding } from "@/lib/branding";
 import { PageHeader, StatCard, StatCardIcon, StatusBadge, ReportHeader } from "@/components/ui";
 import SubscriberActions from "./SubscriberActions";
 
@@ -17,7 +18,10 @@ export default async function FicheAbonne({ params }: { params: Promise<{ id: st
   const { id } = await params;
   const data = await getSubscriber(Number(id));
   if (!data) notFound();
-  const types = await db.select().from(subscriptionTypes).where(eq(subscriptionTypes.active, true));
+  const [types, branding] = await Promise.all([
+    db.select().from(subscriptionTypes).where(eq(subscriptionTypes.active, true)),
+    getBranding(),
+  ]);
   const s = data.subscriber;
   const dates = data.visits.map((v) => new Date(v.occurredAt));
   const now = new Date();
@@ -106,7 +110,7 @@ export default async function FicheAbonne({ params }: { params: Promise<{ id: st
           <div className="card text-center">
             <h3 className="mb-3 text-sm font-bold">Carte d&apos;abonné</h3>
             <div className="rounded-2xl bg-gradient-to-br from-[#14532d] to-[#166534] p-4 text-left text-white">
-              <p className="text-[11px] uppercase tracking-widest text-[#c5a253]">Salam Library Pro</p>
+              <p className="text-[11px] uppercase tracking-widest text-[#c5a253]">{branding.shortName}</p>
               <p className="mt-1 text-lg font-bold">{s.lastName} {s.firstName}</p>
               <p className="font-mono text-xs">{s.code}</p>
               <p className="mt-2 text-xs">Valide jusqu&apos;au {data.current?.endDate ?? "—"}</p>

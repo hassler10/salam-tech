@@ -2,9 +2,11 @@ import { db } from "@/db";
 import { users, subscriptionTypes, visitReasons, settings } from "@/db/schema";
 import { hashPassword } from "./auth";
 import { PUBLIC_DEFAULTS } from "./public-defaults";
-import { sql } from "drizzle-orm";
+import { inArray, notInArray, sql } from "drizzle-orm";
 
 let done = false;
+
+export const MEDIA_SETTING_KEYS = ["library_logo", "library_cover"] as const;
 
 export async function ensureSeed() {
   if (done) return;
@@ -78,6 +80,12 @@ export async function ensureSeed() {
         { key: "self_service_enabled", value: "1" },
       ]);
     }
+    await db
+      .insert(settings)
+      .values(
+        Object.entries(PUBLIC_DEFAULTS).map(([key, value]) => ({ key, value })),
+      )
+      .onConflictDoNothing();
     done = true;
   } catch {
     // la base n'est peut-être pas encore prête
@@ -86,7 +94,22 @@ export async function ensureSeed() {
 
 export async function getSettingsMap(): Promise<Record<string, string>> {
   try {
-    const rows = await db.select().from(settings);
+    const rows = await db
+      .select()
+      .from(settings)
+      .where(notInArray(settings.key, [...MEDIA_SETTING_KEYS]));
+    return Object.fromEntries(rows.map((r) => [r.key, r.value]));
+  } catch {
+    return {};
+  }
+}
+
+export async function getMediaSettings(): Promise<Record<string, string>> {
+  try {
+    const rows = await db
+      .select()
+      .from(settings)
+      .where(inArray(settings.key, [...MEDIA_SETTING_KEYS]));
     return Object.fromEntries(rows.map((r) => [r.key, r.value]));
   } catch {
     return {};

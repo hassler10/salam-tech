@@ -21,7 +21,19 @@ function readDuration(value: unknown): number | null {
 }
 
 export async function GET() {
-  const rows = await db.select().from(subscriptionTypes);
+  const user = await getCurrentUser();
+  const rows = user
+    ? await db.select().from(subscriptionTypes)
+    : await db
+        .select({
+          id: subscriptionTypes.id,
+          name: subscriptionTypes.name,
+          durationMonths: subscriptionTypes.durationMonths,
+          description: subscriptionTypes.description,
+          active: subscriptionTypes.active,
+        })
+        .from(subscriptionTypes)
+        .where(eq(subscriptionTypes.active, true));
   return NextResponse.json({ data: rows });
 }
 

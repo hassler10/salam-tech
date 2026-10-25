@@ -1,4 +1,4 @@
-const CACHE = "salam-library-v3";
+const CACHE = "salam-library-v4";
 const SHELL = ["/", "/borne", "/offline", "/logo.png", "/manifest.webmanifest"];
 
 function isCacheableAsset(url) {
@@ -7,6 +7,7 @@ function isCacheableAsset(url) {
     url.pathname.startsWith("/icons/") ||
     url.pathname === "/logo.png" ||
     url.pathname === "/manifest.webmanifest" ||
+    url.pathname.startsWith("/api/branding/") ||
     /\.(?:png|jpe?g|svg|webp|avif|ico|woff2?)$/i.test(url.pathname)
   );
 }
@@ -48,7 +49,7 @@ self.addEventListener("fetch", (event) => {
         if (
           res.ok &&
           res.type === "basic" &&
-          !url.pathname.startsWith("/api/") &&
+          (!url.pathname.startsWith("/api/") || url.pathname.startsWith("/api/branding/")) &&
           isCacheableAsset(url) &&
           !isPrivate(res)
         ) {

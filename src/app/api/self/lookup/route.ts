@@ -4,19 +4,19 @@ import { subscribers, subscriptionPeriods } from "@/db/schema";
 import { sql, eq, desc } from "drizzle-orm";
 import { rateLimit, clientIp } from "@/lib/ratelimit";
 import { getSettingsMap, getThresholds } from "@/lib/seed";
-import { computeStatus, daysLeft, STATUS_LABEL } from "@/lib/subscriptions";
+import { computeStatus, STATUS_LABEL } from "@/lib/subscriptions";
 
 /**
  * Borne d'auto-identification d'un abonné.
- * Confidentialité : exige l'identifiant ET le nom exact (aucune recherche partielle,
- * aucune liste), renvoie uniquement les données de la personne concernée.
+ * Confidentialité : exige l'identifiant ET le nom exact et ne renvoie que le prénom
+ * et l'état nécessaires à la confirmation de la visite.
  */
 export async function POST(req: Request) {
   const settings = await getSettingsMap();
   if ((settings.self_service_enabled ?? "1") !== "1") {
     return NextResponse.json({ error: "La borne est désactivée." }, { status: 403 });
   }
-  if (!rateLimit(`lookup:${clientIp(req)}`, 12, 10 * 60 * 1000)) {
+  if (!(await rateLimit(`lookup:${clientIp(req)}`, 12, 10 * 60 * 1000))) {
     return NextResponse.json(
       { error: "Trop de tentatives. Veuillez vous adresser à l'agent d'accueil." },
       { status: 429 },
@@ -38,7 +38,12 @@ export async function POST(req: Request) {
 
   // Accepte le numéro de carte de la plateforme existante OU l'identifiant interne.
   const rows = await db
-    .select()
+    .select({
+      id: subscribers.id,
+      firstName: subscribers.firstName,
+      status: subscribers.status,
+      source: subscribers.source,
+    })
     .from(subscribers)
     .where(
       sql`(lower(${subscribers.cardNumber}) = lower(${code}) or lower(${subscribers.code}) = lower(${code}))
@@ -77,10 +82,6 @@ export async function POST(req: Request) {
   return NextResponse.json({
     data: {
       firstName: s.firstName,
-      lastName: s.lastName,
-      typeName: current?.typeName ?? null,
-      endDate: current?.endDate ?? null,
-      daysLeft: daysLeft(current?.endDate ?? null),
       status,
       statusLabel: STATUS_LABEL[status],
     },

@@ -23,6 +23,16 @@ const GREEN = "#157a4e";
 const MINT = "#2a9d73";
 const GOLD = "#c5a253";
 const PALETTE = ["#157a4e", "#c5a253", "#2a9d73", "#64748b", "#0ea5e9", "#f59e0b", "#ef4444", "#8b5cf6"];
+const DOT_COLORS: Record<string, string> = {
+  "#157a4e": "bg-[#157a4e]",
+  "#c5a253": "bg-[#c5a253]",
+  "#2a9d73": "bg-[#2a9d73]",
+  "#64748b": "bg-[#64748b]",
+  "#0ea5e9": "bg-[#0ea5e9]",
+  "#f59e0b": "bg-[#f59e0b]",
+  "#ef4444": "bg-[#ef4444]",
+  "#8b5cf6": "bg-[#8b5cf6]",
+};
 const AXIS = { fill: "#94a3b8", fontSize: 11 };
 const GRID = "rgba(148,163,184,0.18)";
 
@@ -43,7 +53,7 @@ function ChartTip({
       {label !== undefined && <p className="mb-1 font-semibold text-slate-700 dark:text-slate-200">{label}</p>}
       {payload.map((entry, i) => (
         <p key={i} className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
-          <span className="h-1.5 w-1.5 rounded-full" style={{ background: entry.color ?? GREEN }} />
+          <span className={`h-1.5 w-1.5 rounded-full ${DOT_COLORS[entry.color ?? GREEN] ?? DOT_COLORS[GREEN]}`} />
           <span>{entry.name}</span>
           <span className="ml-auto pl-3 font-semibold text-slate-800 dark:text-slate-100">{entry.value}</span>
         </p>

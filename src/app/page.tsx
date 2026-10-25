@@ -7,30 +7,25 @@ import { subscriptionTypes } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
 import { ensureSeed } from "@/lib/seed";
 import { getPublicContent } from "@/lib/public-content";
+import { getBranding } from "@/lib/branding";
 import { Icon, type IconName } from "@/components/icons";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Bibliothèque de la Mosquée Salam du Plateau",
-  description:
-    "Découvrez la Bibliothèque de la Mosquée Salam du Plateau à Abidjan : services, abonnements, horaires, accès et borne libre-service.",
-  openGraph: {
-    title: "Bibliothèque de la Mosquée Salam du Plateau",
-    description:
-      "Un espace de lecture, de recherche et d'apprentissage au cœur du Plateau, à Abidjan.",
-    images: [
-      {
-        url: "/bibliotheque-salam.jpg",
-        width: 800,
-        height: 600,
-        alt: "Salle de lecture de la Bibliothèque de la Mosquée Salam du Plateau",
-      },
-    ],
-    type: "website",
-    locale: "fr_CI",
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const branding = await getBranding();
+  return {
+    title: branding.name,
+    description: `${branding.tagline} — ${branding.name}, ${branding.city}.`,
+    openGraph: {
+      title: branding.name,
+      description: branding.tagline,
+      images: [{ url: branding.coverUrl, alt: branding.name }],
+      type: "website",
+      locale: "fr_CI",
+    },
+  };
+}
 
 const SERVICES: { icon: IconName; title: string; text: string }[] = [
   {
@@ -105,19 +100,20 @@ export default async function Home() {
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-2 px-3 sm:h-[72px] sm:gap-4 sm:px-5">
           <Link href="/" className="flex min-w-0 items-center gap-2 sm:gap-3">
             <Image
-              src="/logo.png"
-              alt="Logo de la bibliothèque"
+              src={content.logoUrl}
+              alt={`Logo de ${content.name}`}
               width={40}
               height={40}
-              className="h-9 w-9 shrink-0 rounded-xl shadow-lg ring-1 ring-white/15 sm:h-[42px] sm:w-[42px]"
+              unoptimized
+              className="h-9 w-9 shrink-0 rounded-xl object-contain shadow-lg ring-1 ring-white/15 sm:h-[42px] sm:w-[42px]"
             />
             <span className="min-w-0 leading-tight">
               <span className="block whitespace-nowrap font-display text-[11px] font-semibold tracking-[0.08em] sm:text-[12.5px] sm:tracking-[0.16em]">
-                <span className="sm:hidden">SALAM</span>
-                <span className="hidden sm:inline">SALAM LIBRARY</span>
+                <span className="sm:hidden">{content.shortName.split(/\s+/)[0]}</span>
+                <span className="hidden sm:inline">{content.shortName}</span>
               </span>
               <span className="mt-0.5 hidden whitespace-nowrap text-[9px] uppercase tracking-[0.2em] text-gold-300/90 md:block">
-                Mosquée Salam du Plateau
+                {content.org}
               </span>
             </span>
           </Link>
@@ -169,8 +165,8 @@ export default async function Home() {
               <span className="text-gradient-gold">{content.tagline}</span>
             </h1>
             <p className="mt-6 max-w-xl text-[14px] leading-7 text-white/65 sm:text-[15px]">
-              Un espace de lecture, de recherche et d&apos;apprentissage ouvert à la communauté.
-              Retrouvez-nous à {content.city}.
+              {content.heroIntro}
+              {content.city ? ` Retrouvez-nous à ${content.city}.` : ""}
             </p>
 
             <div className="mt-8 flex flex-wrap items-center gap-3">
@@ -194,10 +190,11 @@ export default async function Home() {
             <div className="relative overflow-hidden rounded-[2rem] border border-white/15 shadow-2xl ring-1 ring-white/10">
               <div className="relative aspect-[4/3]">
                 <Image
-                  src="/bibliotheque-salam.jpg"
-                  alt="Salle de lecture de la Bibliothèque de la Mosquée Salam du Plateau"
+                  src={content.coverUrl}
+                  alt={`Salle de lecture — ${content.name}`}
                   fill
                   priority
+                  unoptimized
                   sizes="(min-width: 1024px) 46vw, 100vw"
                   className="object-cover"
                 />
@@ -402,7 +399,7 @@ export default async function Home() {
               Nous rendre visite
             </h2>
             <p className="mt-4 text-[14px] leading-7 text-slate-500 dark:text-slate-400">
-              La bibliothèque se situe au Plateau, à Abidjan. Retrouvez ci-dessous les informations
+              La bibliothèque se situe à {content.address}. Retrouvez ci-dessous les informations
               pratiques pour préparer votre visite.
             </p>
           </div>
@@ -589,18 +586,19 @@ export default async function Home() {
             <div>
               <div className="flex items-center gap-3">
                 <Image
-                  src="/logo.png"
-                  alt="Logo de la bibliothèque"
+                  src={content.logoUrl}
+                  alt={`Logo de ${content.name}`}
                   width={44}
                   height={44}
-                  className="rounded-xl ring-1 ring-white/15"
+                  unoptimized
+                  className="rounded-xl object-contain ring-1 ring-white/15"
                 />
                 <div>
                   <p className="font-display text-[13px] font-semibold tracking-[0.12em]">
-                    SALAM LIBRARY
+                    {content.shortName}
                   </p>
                   <p className="mt-0.5 text-[9.5px] uppercase tracking-[0.18em] text-gold-300/90">
-                    Mosquée Salam du Plateau
+                    {content.org}
                   </p>
                 </div>
               </div>
@@ -648,7 +646,7 @@ export default async function Home() {
 
           <div className="mt-10 flex flex-col gap-2 border-t border-white/10 pt-6 text-[10.5px] text-white/35 sm:flex-row sm:items-center sm:justify-between">
             <p>© {year} {content.name}. Tous droits réservés.</p>
-            <p>Plateau · Abidjan · Salam Library Pro</p>
+            <p>{content.city} · {content.shortName}</p>
           </div>
         </div>
       </footer>

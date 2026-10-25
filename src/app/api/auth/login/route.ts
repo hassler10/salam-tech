@@ -12,7 +12,7 @@ const MAX_PASSWORD_LENGTH = 256;
 const DUMMY_PASSWORD_HASH = hashPassword("timing-equalization-dummy-password");
 
 export async function POST(req: Request) {
-  if (!rateLimit(`login:${clientIp(req)}`, 10, 15 * 60 * 1000)) {
+  if (!(await rateLimit(`login:${clientIp(req)}`, 10, 15 * 60 * 1000))) {
     return NextResponse.json(
       { error: "Trop de tentatives. Réessayez dans 15 minutes." },
       { status: 429, headers: { "Retry-After": "900" } },

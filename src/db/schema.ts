@@ -5,6 +5,7 @@ import {
   varchar,
   timestamp,
   integer,
+  bigint,
   boolean,
   date,
   index,
@@ -154,4 +155,10 @@ export const auditLogs = pgTable(
 export const settings = pgTable("settings", {
   key: varchar("key", { length: 64 }).primaryKey(),
   value: text("value").notNull(),
+});
+
+export const rateLimitBuckets = pgTable("rate_limit_buckets", {
+  bucketHash: varchar("bucket_hash", { length: 64 }).primaryKey(),
+  hitCount: integer("hit_count").notNull(),
+  resetAt: bigint("reset_at", { mode: "number" }).notNull(),
 });
