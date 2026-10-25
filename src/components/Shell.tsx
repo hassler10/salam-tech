@@ -11,7 +11,7 @@ export type NavUser = { fullName: string; role: string; username: string };
 
 const NAV: { href: string; label: string; icon: IconName; roles: string[]; group: string }[] = [
   { href: "/dashboard", label: "Tableau de bord", icon: "grid", roles: ["admin", "responsable"], group: "Pilotage" },
-  { href: "/accueil", label: "Accueil (plein écran)", icon: "bell", roles: ["admin", "responsable", "agent"], group: "Pilotage" },
+  { href: "/accueil", label: "Enregistrer une visite", icon: "bell", roles: ["admin", "responsable", "agent"], group: "Pilotage" },
   { href: "/abonnes", label: "Gestion des abonnés", icon: "users", roles: ["admin", "responsable", "agent"], group: "Personnes" },
   { href: "/visiteurs", label: "Gestion des visiteurs", icon: "userPlus", roles: ["admin", "responsable", "agent"], group: "Personnes" },
   { href: "/visites", label: "Historique des visites", icon: "history", roles: ["admin", "responsable", "agent"], group: "Personnes" },

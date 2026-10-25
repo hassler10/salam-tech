@@ -193,84 +193,97 @@ export default function ReceptionClient({
     <div className={embedded ? "grid grid-cols-1 gap-5" : "grid grid-cols-1 gap-5 xl:grid-cols-3"}>
       <div className={embedded ? "" : "xl:col-span-2"}>
         <div className="card">
-          <div className="mb-5 grid grid-cols-2 gap-3">
+          <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <p className="eyebrow">Nouvelle visite</p>
+              <h2 className="mt-2 font-display text-xl font-semibold tracking-tight text-slate-900 dark:text-white">
+                Qui se présente aujourd&apos;hui ?
+              </h2>
+              <p className="mt-1.5 text-[12px] leading-relaxed text-slate-500 dark:text-slate-400">
+                Identifiez la personne, choisissez le motif, puis enregistrez son passage.
+              </p>
+            </div>
+            <span className="inline-flex items-center gap-2 rounded-full border border-brand-600/15 bg-brand-50/80 px-3 py-1.5 text-[10.5px] font-semibold text-brand-700 dark:border-brand-400/20 dark:bg-brand-400/10 dark:text-brand-200">
+              <Icon name="check" className="h-3.5 w-3.5" />
+              Saisie rapide
+            </span>
+          </div>
+
+          <div role="group" aria-label="Type de personne" className="mb-5 grid grid-cols-2 gap-2 rounded-2xl bg-slate-100/80 p-1.5 dark:bg-white/[0.04]">
             <button
+              type="button"
+              aria-pressed={tab === "abonne"}
               onClick={() => setTab("abonne")}
-              className={`rounded-2xl border p-4 text-left transition ${
+              className={`rounded-xl border px-3.5 py-3 text-left transition sm:px-4 ${
                 tab === "abonne"
-                  ? "border-brand-600/30 bg-brand-600/[0.06] shadow-sm dark:border-brand-400/30 dark:bg-brand-400/[0.08]"
-                  : "border-slate-200 hover:border-brand-600/25 hover:bg-brand-50/40 dark:border-white/10 dark:hover:border-gold-400/25 dark:hover:bg-white/[0.03]"
+                  ? "border-brand-600/20 bg-white shadow-sm dark:border-brand-400/25 dark:bg-white/[0.08]"
+                  : "border-transparent text-slate-600 hover:bg-white/70 dark:text-slate-300 dark:hover:bg-white/[0.04]"
               }`}
             >
-              <span
-                className={`grid h-9 w-9 place-items-center rounded-xl ${
-                  tab === "abonne"
-                    ? "bg-brand-600/10 text-brand-700 dark:bg-brand-400/15 dark:text-brand-300"
-                    : "bg-slate-100 text-slate-400 dark:bg-white/[0.05] dark:text-slate-400"
-                }`}
-              >
-                <Icon name="ticket" className="h-4 w-4" />
+              <span className="flex items-center gap-2.5">
+                <Icon name="ticket" className={`h-4 w-4 ${tab === "abonne" ? "text-brand-700 dark:text-brand-300" : "text-slate-400"}`} />
+                <span>
+                  <span className="block text-[12.5px] font-semibold text-slate-900 dark:text-white">Membre / abonné</span>
+                  <span className="mt-0.5 hidden text-[10.5px] text-slate-500 sm:block dark:text-slate-400">Rechercher dans le registre</span>
+                </span>
               </span>
-              <p className="mt-2.5 font-display text-[13.5px] font-semibold text-brand-900 dark:text-white">
-                Visite d&apos;un abonné
-              </p>
-              <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">
-                Rechercher par nom, prénoms ou identifiant.
-              </p>
             </button>
             <button
+              type="button"
+              aria-pressed={tab === "visiteur"}
               onClick={() => setTab("visiteur")}
-              className={`rounded-2xl border p-4 text-left transition ${
+              className={`rounded-xl border px-3.5 py-3 text-left transition sm:px-4 ${
                 tab === "visiteur"
-                  ? "border-gold-500/40 bg-gold-500/[0.08] shadow-sm dark:border-gold-400/35 dark:bg-gold-400/[0.08]"
-                  : "border-slate-200 hover:border-gold-500/30 hover:bg-gold-50/40 dark:border-white/10 dark:hover:border-gold-400/25 dark:hover:bg-white/[0.03]"
+                  ? "border-gold-500/30 bg-white shadow-sm dark:border-gold-400/25 dark:bg-white/[0.08]"
+                  : "border-transparent text-slate-600 hover:bg-white/70 dark:text-slate-300 dark:hover:bg-white/[0.04]"
               }`}
             >
-              <span
-                className={`grid h-9 w-9 place-items-center rounded-xl ${
-                  tab === "visiteur"
-                    ? "bg-gold-500/15 text-gold-700 dark:bg-gold-400/15 dark:text-gold-300"
-                    : "bg-slate-100 text-slate-400 dark:bg-white/[0.05] dark:text-slate-400"
-                }`}
-              >
-                <Icon name="userPlus" className="h-4 w-4" />
+              <span className="flex items-center gap-2.5">
+                <Icon name="userPlus" className={`h-4 w-4 ${tab === "visiteur" ? "text-gold-700 dark:text-gold-300" : "text-slate-400"}`} />
+                <span>
+                  <span className="block text-[12.5px] font-semibold text-slate-900 dark:text-white">Visiteur</span>
+                  <span className="mt-0.5 hidden text-[10.5px] text-slate-500 sm:block dark:text-slate-400">Nouveau ou déjà connu</span>
+                </span>
               </span>
-              <p className="mt-2.5 font-display text-[13.5px] font-semibold text-brand-900 dark:text-white">
-                Visite d&apos;un visiteur
-              </p>
-              <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">
-                Visiteur occasionnel, avec ou sans fiche.
-              </p>
             </button>
           </div>
 
           <div className="space-y-4">
             <div>
-              <label className="label">
-                {tab === "abonne" ? "Rechercher l'abonné" : "Rechercher un visiteur déjà connu (facultatif)"}
+              <label className="label" htmlFor="person-search">
+                {tab === "abonne" ? "Rechercher un membre" : "Retrouver un visiteur déjà enregistré"}
               </label>
-              <input
-                className="input"
-                placeholder="Nom, prénoms ou identifiant…"
-                value={query}
-                aria-label={tab === "abonne" ? "Rechercher un abonné" : "Rechercher un visiteur"}
-                onKeyDown={(e) => {
-                  if (e.key !== "Enter") return;
-                  e.preventDefault();
-                  if (!selected && results.length > 0) {
-                    const first = results[0];
-                    setSelected(first);
-                    setQuery(`${first.lastName} ${first.firstName}`);
-                    setResults([]);
-                  } else {
-                    void submit();
-                  }
-                }}
-                onChange={(e) => {
-                  setQuery(e.target.value);
-                  setSelected(null);
-                }}
-              />
+              {tab === "visiteur" && (
+                <p className="mb-2 text-[11px] text-slate-500 dark:text-slate-400">
+                  S&apos;il s&apos;agit d&apos;une première visite, laissez la recherche vide et renseignez ses informations ci-dessous.
+                </p>
+              )}
+              <div className="relative">
+                <Icon name="search" className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <input
+                  id="person-search"
+                  className="input h-12 pl-10 text-[14px]"
+                  placeholder={tab === "abonne" ? "Nom, prénoms ou numéro de carte…" : "Nom, prénoms ou code visiteur…"}
+                  value={query}
+                  aria-label={tab === "abonne" ? "Rechercher un membre" : "Rechercher un visiteur"}
+                  onKeyDown={(e) => {
+                    if (e.key !== "Enter") return;
+                    e.preventDefault();
+                    if (!selected && results.length > 0) {
+                      const first = results[0];
+                      setSelected(first);
+                      setQuery(`${first.lastName} ${first.firstName}`);
+                      setResults([]);
+                    } else {
+                      void submit();
+                    }
+                  }}
+                  onChange={(e) => {
+                    setQuery(e.target.value);
+                    setSelected(null);
+                  }}
+                />
+              </div>
               {results.length > 0 && !selected && (
                 <div className="mt-2 max-h-56 overflow-y-auto rounded-xl border border-slate-200/80 bg-white/95 shadow-lg backdrop-blur dark:border-white/10 dark:bg-[#0c1a13]/95">
                   {results.map((p) => (
@@ -300,22 +313,27 @@ export default function ReceptionClient({
             </div>
 
             {tab === "visiteur" && !selected && (
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <div>
-                  <label className="label">Nom *</label>
-                  <input className="input" value={lastName} onChange={(e) => setLastName(e.target.value)} />
+              <div className="grid grid-cols-1 gap-3 rounded-2xl border border-gold-500/15 bg-gold-500/[0.035] p-4 sm:grid-cols-2 dark:border-gold-400/15 dark:bg-gold-400/[0.035]">
+                <div className="sm:col-span-2">
+                  <p className="text-[12.5px] font-semibold text-slate-800 dark:text-slate-100">Nouveau visiteur</p>
+                  <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">Nom et prénoms suffisent pour enregistrer son passage.</p>
                 </div>
                 <div>
-                  <label className="label">Prénoms *</label>
-                  <input className="input" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+                  <label className="label" htmlFor="visitor-last-name">Nom *</label>
+                  <input id="visitor-last-name" className="input" autoComplete="family-name" required value={lastName} onChange={(e) => setLastName(e.target.value)} />
                 </div>
                 <div>
-                  <label className="label">Contact (facultatif)</label>
-                  <input className="input" value={phone} onChange={(e) => setPhone(e.target.value)} />
+                  <label className="label" htmlFor="visitor-first-name">Prénoms *</label>
+                  <input id="visitor-first-name" className="input" autoComplete="given-name" required value={firstName} onChange={(e) => setFirstName(e.target.value)} />
                 </div>
                 <div>
-                  <label className="label">Fonction (facultatif)</label>
+                  <label className="label" htmlFor="visitor-phone">Contact (facultatif)</label>
+                  <input id="visitor-phone" className="input" autoComplete="tel" value={phone} onChange={(e) => setPhone(e.target.value)} />
+                </div>
+                <div>
+                  <label className="label" htmlFor="visitor-organization">Fonction (facultatif)</label>
                   <input
+                    id="visitor-organization"
                     className="input"
                     value={organization}
                     onChange={(e) => setOrganization(e.target.value)}
@@ -340,6 +358,7 @@ export default function ReceptionClient({
 
             {message && (
               <p
+                aria-live="polite"
                 className={`rounded-xl border px-3.5 py-2.5 text-sm font-medium ${
                   message.type === "ok"
                     ? "border-brand-600/15 bg-brand-50/80 text-brand-800 dark:border-brand-400/20 dark:bg-brand-400/10 dark:text-brand-200"
@@ -352,14 +371,18 @@ export default function ReceptionClient({
               </p>
             )}
 
-            <div className="flex flex-wrap gap-3">
-              <button onClick={submit} disabled={busy} className="btn-primary px-6 py-2.5">
+            <div className="flex flex-col gap-3 border-t border-slate-200/70 pt-4 sm:flex-row sm:items-center sm:justify-between dark:border-white/10">
+              <button type="button" onClick={submit} disabled={busy} className="btn-primary justify-center px-6 py-3 text-[13px]">
                 {busy ? "Enregistrement…" : "Valider l'enregistrement"}
               </button>
-              <button onClick={reset} className="btn-ghost">Réinitialiser</button>
-              {selected && tab === "abonne" && (
-                <Link href={`/abonnes/${selected.id}`} className="btn-ghost">Voir la fiche</Link>
-              )}
+              <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-end">
+                <button type="button" onClick={reset} className="btn-ghost justify-center px-5 py-2.5">
+                  Réinitialiser
+                </button>
+                {selected && tab === "abonne" && (
+                  <Link href={`/abonnes/${selected.id}`} className="btn-ghost">Voir la fiche</Link>
+                )}
+              </div>
             </div>
 
             {!online && (
@@ -389,9 +412,15 @@ export default function ReceptionClient({
       </div>
 
       <div className={embedded ? "card h-fit max-h-80 overflow-y-auto" : "card h-fit"}>
-        <h3 className="mb-3 text-sm font-bold">
-          {embedded ? "Dernières visites" : "10 dernières visites enregistrées"}
-        </h3>
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <div>
+            <p className="eyebrow">Registre</p>
+            <h3 className="mt-1 text-sm font-bold">Derniers passages</h3>
+          </div>
+          <Link href="/visites" className="text-[11px] font-semibold text-brand-700 hover:underline dark:text-gold-300">
+            Tout l&apos;historique
+          </Link>
+        </div>
         <ul className="space-y-2">
           {recent.length === 0 && <li className="text-sm text-slate-500">Aucune visite enregistrée.</li>}
           {recent.map((v) => (
