@@ -88,18 +88,33 @@ export async function syncQueue(): Promise<SyncReport> {
   const queue = await listQueue();
   if (queue.length === 0) return { synced: 0, duplicates: 0, failed: 0 };
   const report: SyncReport = { synced: 0, duplicates: 0, failed: 0 };
-  try {
-    const res = await fetch("/api/visits", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ batch: queue }),
-    });
-    if (!res.ok) throw new Error("Échec de la synchronisation");
-    const json = (await res.json()) as {
-      results: { uid: string; status: string; message?: string }[];
-    };
-    for (const r of json.results) {
-      if (r.status === "created") {
+  const CHUNK_SIZE = 100;
+
+  for (let offset = 0; offset < queue.length; offset += CHUNK_SIZE) {
+    const chunk = queue.slice(offset, offset + CHUNK_SIZE);
+    let json: { results: { uid: string; status: string; message?: string }[] };
+    try {
+      const res = await fetch("/api/visits", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ batch: chunk }),
+      });
+      if (!res.ok) {
+        report.failed += chunk.length;
+        continue;
+      }
+      json = (await res.json()) as typeof json;
+    } catch {
+      report.failed += queue.length - offset;
+      break;
+    }
+
+    const byUid = new Map(json.results.map((r) => [r.uid, r]));
+    for (const item of chunk) {
+      const r = byUid.get(item.uid);
+      if (!r) {
+        report.failed++;
+      } else if (r.status === "created") {
         report.synced++;
         await removeFromQueue(r.uid);
       } else if (r.status === "duplicate") {
@@ -107,12 +122,9 @@ export async function syncQueue(): Promise<SyncReport> {
         await removeFromQueue(r.uid);
       } else {
         report.failed++;
-        const item = queue.find((q) => q.uid === r.uid);
-        if (item) await enqueueVisit({ ...item, state: "erreur", error: r.message });
+        await enqueueVisit({ ...item, state: "erreur", error: r.message });
       }
     }
-  } catch {
-    report.failed = queue.length;
   }
   return report;
 }

@@ -29,6 +29,12 @@ export async function POST(req: Request) {
   if (!code || !lastName) {
     return NextResponse.json({ error: "Identifiant et nom obligatoires." }, { status: 400 });
   }
+  if (code.length > 48 || lastName.length > 120) {
+    return NextResponse.json(
+      { error: "Identifiant ou nom incorrect. Adressez-vous à l'agent d'accueil." },
+      { status: 400 },
+    );
+  }
 
   // Accepte le numéro de carte de la plateforme existante OU l'identifiant interne.
   const rows = await db
@@ -70,8 +76,6 @@ export async function POST(req: Request) {
 
   return NextResponse.json({
     data: {
-      id: s.id,
-      code: s.code,
       firstName: s.firstName,
       lastName: s.lastName,
       typeName: current?.typeName ?? null,

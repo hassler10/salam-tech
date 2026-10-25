@@ -2,14 +2,27 @@ import { NextResponse } from "next/server";
 import { getCurrentUser, can, logAudit } from "@/lib/auth";
 import { parseCsv, applyImport } from "@/lib/import";
 
+const MAX_CSV_BYTES = 5_000_000;
+const MAX_ROWS = 20_000;
+
 export async function POST(req: Request) {
   const user = await getCurrentUser();
   if (!can(user?.role, "users.manage")) {
     return NextResponse.json({ error: "Non autorisé. Réservé à l'administrateur." }, { status: 403 });
   }
+  const contentLength = Number(req.headers.get("content-length") ?? 0);
+  if (Number.isFinite(contentLength) && contentLength > MAX_CSV_BYTES + 100_000) {
+    return NextResponse.json({ error: "Fichier trop volumineux (5 Mo maximum)." }, { status: 413 });
+  }
   const b = await req.json().catch(() => null);
-  const text = String(b?.csv ?? "");
+  if (!b || typeof b !== "object" || typeof b.csv !== "string") {
+    return NextResponse.json({ error: "Fichier invalide." }, { status: 400 });
+  }
+  const text = b.csv;
   if (!text.trim()) return NextResponse.json({ error: "Fichier vide." }, { status: 400 });
+  if (text.length > MAX_CSV_BYTES) {
+    return NextResponse.json({ error: "Fichier trop volumineux (5 Mo maximum)." }, { status: 413 });
+  }
 
   const { rows, errors, headers } = parseCsv(text);
   if (rows.length === 0 && errors.length === 0) {
@@ -18,9 +31,15 @@ export async function POST(req: Request) {
       { status: 400 },
     );
   }
+  if (rows.length > MAX_ROWS) {
+    return NextResponse.json(
+      { error: `Trop de lignes (${MAX_ROWS} maximum par import).` },
+      { status: 413 },
+    );
+  }
 
   // Mode aperçu : rien n'est écrit en base.
-  if (b?.dryRun) {
+  if (b.dryRun) {
     return NextResponse.json({
       preview: true,
       total: rows.length,

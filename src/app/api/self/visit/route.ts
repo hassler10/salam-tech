@@ -26,15 +26,17 @@ export async function POST(req: Request) {
 
   const personType = b.personType === "abonne" ? "abonne" : "visiteur";
   const uid =
-    typeof b.uid === "string" && b.uid.length > 6 ? b.uid : crypto.randomUUID();
+    typeof b.uid === "string" && /^[A-Za-z0-9-]{8,64}$/.test(b.uid)
+      ? b.uid
+      : crypto.randomUUID();
 
   const already = await db.select({ id: visits.id }).from(visits).where(eq(visits.uid, uid)).limit(1);
   if (already[0]) return NextResponse.json({ ok: true, duplicate: true });
 
   // Le motif doit appartenir à la liste configurée (pas de texte libre non contrôlé).
   const allowed = await db.select().from(visitReasons).where(eq(visitReasons.active, true));
-  const reason =
-    allowed.find((r) => r.label === String(b.reason))?.label ?? allowed[0]?.label ?? null;
+  const reasonInput = typeof b.reason === "string" ? b.reason.slice(0, 120) : "";
+  const reason = allowed.find((r) => r.label === reasonInput)?.label ?? allowed[0]?.label ?? null;
 
   let subscriberId: number | null = null;
   let visitorId: number | null = null;
@@ -45,6 +47,9 @@ export async function POST(req: Request) {
     // Re-vérification serveur : l'identité ne peut pas être falsifiée côté navigateur.
     const code = String(b.code ?? "").trim();
     const lastName = String(b.lastName ?? "").trim();
+    if (!code || code.length > 48 || !lastName || lastName.length > 120) {
+      return NextResponse.json({ error: "Identification impossible." }, { status: 400 });
+    }
     const rows = await db
       .select()
       .from(subscribers)
@@ -69,6 +74,9 @@ export async function POST(req: Request) {
     if (lastName.length < 2 || firstName.length < 2) {
       return NextResponse.json({ error: "Nom et prénoms obligatoires." }, { status: 400 });
     }
+    if (lastName.length > 120 || firstName.length > 120) {
+      return NextResponse.json({ error: "Nom ou prénoms trop longs." }, { status: 400 });
+    }
     organization = b.organization ? String(b.organization).slice(0, 140) : null;
     const v = await createVisitorRecord({
       lastName,
@@ -81,7 +89,8 @@ export async function POST(req: Request) {
   }
 
   // Anti-doublon : même personne enregistrée deux fois de suite.
-  const windowMin = Number(settings.duplicate_window_minutes ?? 30);
+  const rawWindow = Number(settings.duplicate_window_minutes ?? 30);
+  const windowMin = Number.isFinite(rawWindow) ? Math.min(Math.max(rawWindow, 0), 1440) : 30;
   const since = new Date(Date.now() - windowMin * 60000);
   const conds = [gte(visits.occurredAt, since)];
   conds.push(subscriberId ? eq(visits.subscriberId, subscriberId) : eq(visits.visitorId, visitorId!));
@@ -119,7 +128,10 @@ export async function POST(req: Request) {
   });
 }
 
-export async function GET() {
+export async function GET(req: Request) {
+  if (!rateLimit(`self-config:${clientIp(req)}`, 120, 10 * 60 * 1000)) {
+    return NextResponse.json({ error: "Trop de requêtes." }, { status: 429 });
+  }
   const rows = await db.select().from(visitReasons).where(eq(visitReasons.active, true));
   const settings = await getSettingsMap();
   return NextResponse.json({

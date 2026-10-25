@@ -14,10 +14,26 @@ export type PublicContent = {
   selfServiceEnabled: boolean;
 };
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+const PHONE_RE = /^[0-9+().\s-]{0,40}$/;
+
+function isHttpUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
 export async function getPublicContent(): Promise<PublicContent> {
   const settings = await getSettingsMap();
   const read = (key: keyof typeof PUBLIC_DEFAULTS) =>
     settings[key]?.trim() || PUBLIC_DEFAULTS[key];
+
+  const phone = read("library_phone");
+  const email = read("library_email");
+  const mapUrl = read("library_map_url");
 
   return {
     name: read("library_name"),
@@ -26,9 +42,9 @@ export async function getPublicContent(): Promise<PublicContent> {
     about: read("library_about"),
     address: read("library_address"),
     hours: read("opening_hours"),
-    phone: read("library_phone"),
-    email: read("library_email"),
-    mapUrl: read("library_map_url"),
+    phone: PHONE_RE.test(phone) ? phone : "",
+    email: EMAIL_RE.test(email) ? email : "",
+    mapUrl: isHttpUrl(mapUrl) ? mapUrl : "",
     selfServiceEnabled: (settings.self_service_enabled ?? "1") === "1",
   };
 }

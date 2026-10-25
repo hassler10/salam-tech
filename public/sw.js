@@ -1,9 +1,28 @@
-const CACHE = "salam-library-v2";
-const SHELL = ["/", "/dashboard", "/accueil", "/logo.png", "/manifest.webmanifest", "/offline"];
+const CACHE = "salam-library-v3";
+const SHELL = ["/", "/borne", "/offline", "/logo.png", "/manifest.webmanifest"];
+
+function isCacheableAsset(url) {
+  return (
+    url.pathname.startsWith("/_next/static/") ||
+    url.pathname.startsWith("/icons/") ||
+    url.pathname === "/logo.png" ||
+    url.pathname === "/manifest.webmanifest" ||
+    /\.(?:png|jpe?g|svg|webp|avif|ico|woff2?)$/i.test(url.pathname)
+  );
+}
+
+function isPrivate(response) {
+  return /(?:no-store|private)/i.test(response.headers.get("cache-control") || "");
+}
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE).then((c) => c.addAll(SHELL).catch(() => undefined)).then(() => self.skipWaiting()),
+    caches
+      .open(CACHE)
+      .then((cache) =>
+        Promise.all(SHELL.map((url) => cache.add(url).catch(() => undefined))),
+      )
+      .then(() => self.skipWaiting()),
   );
 });
 
@@ -25,7 +44,14 @@ self.addEventListener("fetch", (event) => {
   event.respondWith(
     fetch(req)
       .then((res) => {
-        if (res.ok && !url.pathname.startsWith("/api/")) {
+        // Ne met jamais en cache les pages authentifiées ni les réponses privées.
+        if (
+          res.ok &&
+          res.type === "basic" &&
+          !url.pathname.startsWith("/api/") &&
+          isCacheableAsset(url) &&
+          !isPrivate(res)
+        ) {
           const copy = res.clone();
           caches.open(CACHE).then((c) => c.put(req, copy));
         }
@@ -35,7 +61,7 @@ self.addEventListener("fetch", (event) => {
         const cached = await caches.match(req);
         if (cached) return cached;
         if (req.mode === "navigate") {
-          return (await caches.match("/accueil")) || (await caches.match("/offline")) || Response.error();
+          return (await caches.match("/offline")) || Response.error();
         }
         return Response.error();
       }),

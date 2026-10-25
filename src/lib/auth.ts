@@ -2,11 +2,18 @@ import { cookies } from "next/headers";
 import { randomBytes, scryptSync, timingSafeEqual } from "crypto";
 import { db } from "@/db";
 import { sessions, users, auditLogs, settings } from "@/db/schema";
-import { eq, and, gt } from "drizzle-orm";
+import { eq, and, gt, ne } from "drizzle-orm";
 
 export const SESSION_COOKIE = "slp_session";
+export const MIN_PASSWORD_LENGTH = 12;
 
-export type Role = "admin" | "responsable" | "agent";
+export const ROLES = ["admin", "responsable", "agent"] as const;
+
+export type Role = (typeof ROLES)[number];
+
+export function isRole(value: unknown): value is Role {
+  return typeof value === "string" && (ROLES as readonly string[]).includes(value);
+}
 
 export type SessionUser = {
   id: number;
@@ -59,11 +66,23 @@ export async function createSession(userId: number) {
   return id;
 }
 
+export async function getSessionId(): Promise<string | null> {
+  const store = await cookies();
+  return store.get(SESSION_COOKIE)?.value ?? null;
+}
+
 export async function destroySession() {
   const store = await cookies();
   const id = store.get(SESSION_COOKIE)?.value;
   if (id) await db.delete(sessions).where(eq(sessions.id, id));
   store.delete(SESSION_COOKIE);
+}
+
+export async function revokeUserSessions(userId: number, exceptSessionId?: string | null) {
+  const where = exceptSessionId
+    ? and(eq(sessions.userId, userId), ne(sessions.id, exceptSessionId))
+    : eq(sessions.userId, userId);
+  await db.delete(sessions).where(where);
 }
 
 export async function getCurrentUser(): Promise<SessionUser | null> {

@@ -33,16 +33,18 @@ export default function UsersClient({ rows }: { rows: U[] }) {
   };
 
   const patch = async (body: Record<string, unknown>) => {
-    await fetch("/api/users", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    const res = await fetch("/api/users", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) setMsg(json.error ?? "Modification impossible.");
     router.refresh();
   };
 
   return (
     <div className="space-y-5">
       <form onSubmit={create} className="card grid grid-cols-1 gap-3 sm:grid-cols-5">
-        <input className="input" required placeholder="Identifiant *" value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} />
-        <input className="input" required placeholder="Nom complet *" value={form.fullName} onChange={(e) => setForm({ ...form, fullName: e.target.value })} />
-        <input className="input" required type="password" placeholder="Mot de passe *" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
+        <input className="input" required placeholder="Identifiant *" pattern="[a-z0-9][a-z0-9._-]{2,31}" title="3 à 32 caractères : lettres minuscules, chiffres, point, tiret ou underscore" value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} />
+        <input className="input" required maxLength={160} placeholder="Nom complet *" value={form.fullName} onChange={(e) => setForm({ ...form, fullName: e.target.value })} />
+        <input className="input" required type="password" minLength={12} maxLength={256} autoComplete="new-password" placeholder="Mot de passe (12 caractères min.) *" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
         <select className="input" value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })}>
           {ROLES.map((r) => <option key={r.v} value={r.v}>{r.l}</option>)}
         </select>
@@ -71,7 +73,7 @@ export default function UsersClient({ rows }: { rows: U[] }) {
                 <td>{new Date(u.createdAt).toLocaleDateString("fr-FR")}</td>
                 <td>
                   <div className="flex gap-1">
-                    <input className="input py-1 text-xs" type="password" value={pwd[u.id] ?? ""} onChange={(e) => setPwd({ ...pwd, [u.id]: e.target.value })} />
+                    <input className="input py-1 text-xs" type="password" minLength={12} maxLength={256} autoComplete="new-password" placeholder="12 caractères min." value={pwd[u.id] ?? ""} onChange={(e) => setPwd({ ...pwd, [u.id]: e.target.value })} />
                     <button className="btn-ghost px-2 py-1 text-xs" onClick={() => { patch({ id: u.id, password: pwd[u.id] }); setPwd({ ...pwd, [u.id]: "" }); }}>OK</button>
                   </div>
                 </td>
