@@ -23,6 +23,35 @@ const TONES: Record<string, string> = {
   aucun: "bg-slate-200 text-slate-800",
 };
 
+function Frame({
+  children,
+  libraryName,
+  city,
+}: {
+  children: React.ReactNode;
+  libraryName: string;
+  city: string;
+}) {
+  return (
+    <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-[#14532d] via-[#166534] to-[#0f3d22] p-4">
+      <div className="w-full max-w-2xl rounded-3xl bg-white p-6 shadow-2xl sm:p-10">
+        <div className="mb-6 flex flex-col items-center text-center">
+          <Image src="/logo.png" alt="Logo" width={80} height={80} className="rounded-2xl" />
+          <h1 className="mt-3 text-xl font-extrabold tracking-tight text-[#14532d] sm:text-2xl">
+            {libraryName}
+          </h1>
+          <p className="text-xs text-slate-500">{city}</p>
+          <p className="mt-1 text-sm font-semibold text-[#c5a253]">Borne d&apos;enregistrement des visites</p>
+        </div>
+        {children}
+      </div>
+      <p className="mt-4 text-center text-xs text-white/60">
+        Vos informations sont confidentielles : vous ne voyez que votre propre fiche.
+      </p>
+    </div>
+  );
+}
+
 export default function KioskClient({
   enabled,
   reasons,
@@ -120,28 +149,9 @@ export default function KioskClient({
     setDone("Votre visite a bien été enregistrée. Bonne lecture !");
   };
 
-  const Frame = ({ children }: { children: React.ReactNode }) => (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-[#14532d] via-[#166534] to-[#0f3d22] p-4">
-      <div className="w-full max-w-2xl rounded-3xl bg-white p-6 shadow-2xl sm:p-10">
-        <div className="mb-6 flex flex-col items-center text-center">
-          <Image src="/logo.png" alt="Logo" width={80} height={80} className="rounded-2xl" />
-          <h1 className="mt-3 text-xl font-extrabold tracking-tight text-[#14532d] sm:text-2xl">
-            {libraryName}
-          </h1>
-          <p className="text-xs text-slate-500">{city}</p>
-          <p className="mt-1 text-sm font-semibold text-[#c5a253]">Borne d&apos;enregistrement des visites</p>
-        </div>
-        {children}
-      </div>
-      <p className="mt-4 text-center text-xs text-white/60">
-        Vos informations sont confidentielles : vous ne voyez que votre propre fiche.
-      </p>
-    </div>
-  );
-
   if (!enabled) {
     return (
-      <Frame>
+      <Frame libraryName={libraryName} city={city}>
         <p className="rounded-2xl bg-slate-100 p-6 text-center text-slate-700">
           La borne d&apos;auto-enregistrement est actuellement désactivée.
           Veuillez vous adresser à l&apos;agent d&apos;accueil.
@@ -152,7 +162,7 @@ export default function KioskClient({
 
   if (done) {
     return (
-      <Frame>
+      <Frame libraryName={libraryName} city={city}>
         <div className="animate-fade-up rounded-2xl bg-emerald-50 p-8 text-center">
           <p className="text-6xl">✅</p>
           <p className="mt-4 text-xl font-bold text-emerald-900">{done}</p>
@@ -169,7 +179,7 @@ export default function KioskClient({
 
   if (mode === "choix") {
     return (
-      <Frame>
+      <Frame libraryName={libraryName} city={city}>
         <p className="mb-5 text-center text-base text-slate-600">
           Bienvenue. Veuillez indiquer votre situation :
         </p>
@@ -197,7 +207,7 @@ export default function KioskClient({
 
   if (mode === "abonne") {
     return (
-      <Frame>
+      <Frame libraryName={libraryName} city={city}>
         {!me ? (
           <form onSubmit={identify} className="space-y-4">
             <p className="text-center text-sm text-slate-600">
@@ -271,7 +281,7 @@ export default function KioskClient({
   }
 
   return (
-    <Frame>
+    <Frame libraryName={libraryName} city={city}>
       <form
         className="space-y-4"
         onSubmit={(e) => { e.preventDefault(); register("visiteur"); }}
