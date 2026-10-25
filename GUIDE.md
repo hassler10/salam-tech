@@ -9,8 +9,11 @@ Bibliothèque de la Mosquée Salam du Plateau — Abidjan, Côte d'Ivoire.
 
 ```bash
 npm install
-# Variable requise dans .env
+# Variables requises dans .env
 # DATABASE_URL=postgresql://user:pass@host:5432/base
+# SEED_ADMIN_PASSWORD=mot-de-passe-prive-de-12-caracteres-minimum
+# SEED_MANAGER_PASSWORD=mot-de-passe-prive-de-12-caracteres-minimum
+# SEED_AGENT_PASSWORD=mot-de-passe-prive-de-12-caracteres-minimum
 npx drizzle-kit push      # crée les tables
 npm run build && npm start
 ```
@@ -22,15 +25,15 @@ Au premier démarrage, l'application crée automatiquement :
 - les 6 motifs de visite,
 - les paramètres par défaut (seuils d'alerte 7 / 3 jours).
 
-### Premier administrateur
+### Comptes initiaux
 
-| Identifiant | Mot de passe | Rôle |
-|---|---|---|
-| `admin` | `admin123` | Administrateur |
-| `responsable` | `respo123` | Responsable de la bibliothèque |
-| `agent` | `agent123` | Agent d'accueil |
+Les trois comptes initiaux sont créés avec les mots de passe privés définis par les variables
+`SEED_ADMIN_PASSWORD`, `SEED_MANAGER_PASSWORD` et `SEED_AGENT_PASSWORD` dans l'environnement.
+Chaque mot de passe doit contenir au moins 12 caractères. Ces variables ne servent qu'à créer
+les comptes lorsque la table des utilisateurs est vide.
 
-**Changez ces mots de passe dès la première connexion** (page *Gestion des utilisateurs*).
+Ne publiez pas ces valeurs et ne les ajoutez pas au dépôt. Le formulaire de connexion applique
+également une limite de 10 tentatives par adresse IP sur 15 minutes.
 
 ## 2. Rôles et autorisations
 

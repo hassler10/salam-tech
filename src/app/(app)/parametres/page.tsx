@@ -3,6 +3,7 @@ import { db } from "@/db";
 import { visitReasons } from "@/db/schema";
 import { getCurrentUser, can } from "@/lib/auth";
 import { getSettingsMap } from "@/lib/seed";
+import { PUBLIC_DEFAULTS } from "@/lib/public-defaults";
 import { PageHeader } from "@/components/ui";
 import SettingsClient from "./SettingsClient";
 import ReasonsClient from "./ReasonsClient";
@@ -12,7 +13,7 @@ export const dynamic = "force-dynamic";
 export default async function ParametresPage() {
   const user = await getCurrentUser();
   if (!can(user?.role, "settings.write")) redirect("/dashboard");
-  const settings = await getSettingsMap();
+  const settings = { ...PUBLIC_DEFAULTS, ...(await getSettingsMap()) };
   const reasons = await db.select().from(visitReasons).orderBy(visitReasons.id);
   return (
     <div className="space-y-5">

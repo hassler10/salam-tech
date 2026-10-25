@@ -1,6 +1,7 @@
 import { db } from "@/db";
 import { users, subscriptionTypes, visitReasons, settings } from "@/db/schema";
 import { hashPassword } from "./auth";
+import { PUBLIC_DEFAULTS } from "./public-defaults";
 import { sql } from "drizzle-orm";
 
 let done = false;
@@ -10,23 +11,31 @@ export async function ensureSeed() {
   try {
     const existing = await db.select({ c: sql<number>`count(*)::int` }).from(users);
     if ((existing[0]?.c ?? 0) === 0) {
+      const bootstrapPasswords = {
+        admin: process.env.SEED_ADMIN_PASSWORD,
+        responsable: process.env.SEED_MANAGER_PASSWORD,
+        agent: process.env.SEED_AGENT_PASSWORD,
+      };
+      if (Object.values(bootstrapPasswords).some((password) => !password || password.length < 12)) {
+        throw new Error("Configurez SEED_ADMIN_PASSWORD, SEED_MANAGER_PASSWORD et SEED_AGENT_PASSWORD (12 caractères minimum) avant le premier démarrage.");
+      }
       await db.insert(users).values([
         {
           username: "admin",
           fullName: "Administrateur Système",
-          passwordHash: hashPassword("admin123"),
+          passwordHash: hashPassword(bootstrapPasswords.admin!),
           role: "admin",
         },
         {
           username: "responsable",
           fullName: "Responsable Bibliothèque",
-          passwordHash: hashPassword("respo123"),
+          passwordHash: hashPassword(bootstrapPasswords.responsable!),
           role: "responsable",
         },
         {
           username: "agent",
           fullName: "Agent d'Accueil",
-          passwordHash: hashPassword("agent123"),
+          passwordHash: hashPassword(bootstrapPasswords.agent!),
           role: "agent",
         },
       ]);
@@ -57,8 +66,11 @@ export async function ensureSeed() {
     const s = await db.select({ c: sql<number>`count(*)::int` }).from(settings);
     if ((s[0]?.c ?? 0) === 0) {
       await db.insert(settings).values([
-        { key: "library_name", value: "Bibliothèque de la Mosquée Salam du Plateau" },
-        { key: "library_city", value: "Abidjan, Côte d'Ivoire" },
+        { key: "library_name", value: PUBLIC_DEFAULTS.library_name },
+        { key: "library_city", value: PUBLIC_DEFAULTS.library_city },
+        { key: "library_tagline", value: PUBLIC_DEFAULTS.library_tagline },
+        { key: "library_about", value: PUBLIC_DEFAULTS.library_about },
+        { key: "library_address", value: PUBLIC_DEFAULTS.library_address },
         { key: "alert_soon_days", value: "7" },
         { key: "alert_imminent_days", value: "3" },
         { key: "duplicate_window_minutes", value: "30" },

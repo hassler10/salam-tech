@@ -1,4 +1,4 @@
-const CACHE = "salam-library-v1";
+const CACHE = "salam-library-v2";
 const SHELL = ["/", "/dashboard", "/accueil", "/logo.png", "/manifest.webmanifest", "/offline"];
 
 self.addEventListener("install", (event) => {

@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Icon } from "@/components/icons";
@@ -23,19 +24,24 @@ export default function LoginForm() {
     e.preventDefault();
     setLoading(true);
     setError("");
-    const res = await fetch("/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, password }),
-    });
-    const json = await res.json().catch(() => ({}));
-    setLoading(false);
-    if (!res.ok) {
-      setError(json.error ?? "Connexion impossible.");
-      return;
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(json.error ?? "Connexion impossible.");
+        return;
+      }
+      router.push(json.role === "agent" ? "/accueil" : "/dashboard");
+      router.refresh();
+    } catch {
+      setError("Serveur injoignable. Vérifiez votre connexion puis réessayez.");
+    } finally {
+      setLoading(false);
     }
-    router.push("/");
-    router.refresh();
   };
 
   return (
@@ -116,6 +122,14 @@ export default function LoginForm() {
         <div className="pointer-events-none absolute -bottom-32 left-0 h-80 w-80 rounded-full bg-brand-500/10 blur-3xl" />
 
         <div className="relative w-full max-w-[420px]">
+          <Link
+            href="/"
+            className="mb-5 inline-flex items-center gap-1.5 text-[11.5px] font-medium text-white/50 transition hover:text-white"
+          >
+            <Icon name="arrowRight" className="h-3.5 w-3.5 rotate-180" />
+            Retour à l&apos;accueil
+          </Link>
+
           <div className="mb-7 flex items-center gap-3 lg:hidden">
             <Image src="/logo.png" alt="Logo" width={46} height={46} className="rounded-2xl shadow-lg" />
             <div>
@@ -199,21 +213,6 @@ export default function LoginForm() {
               <Icon name="arrowRight" className="h-4 w-4 text-gold-600 transition group-hover:translate-x-0.5" />
             </a>
           </div>
-
-          <details className="group mt-5 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-[11.5px] text-white/50 backdrop-blur">
-            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 font-semibold text-white/80 marker:hidden">
-              Comptes de démarrage
-              <Icon name="arrowRight" className="h-3.5 w-3.5 text-white/40 transition group-open:rotate-90" />
-            </summary>
-            <div className="mt-3 space-y-1.5 font-mono text-[11px]">
-              <p className="flex justify-between"><span>admin</span><span className="text-gold-300">admin123</span></p>
-              <p className="flex justify-between"><span>responsable</span><span className="text-gold-300">respo123</span></p>
-              <p className="flex justify-between"><span>agent</span><span className="text-gold-300">agent123</span></p>
-            </div>
-            <p className="mt-3 text-[10.5px] text-white/35">
-              À modifier dès la première connexion.
-            </p>
-          </details>
 
           <p className="mt-6 text-center text-[10.5px] text-slate-400 dark:text-slate-500">
             © 2026 Bibliothèque de la Mosquée Salam du Plateau · Abidjan

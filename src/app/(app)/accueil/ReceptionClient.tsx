@@ -253,6 +253,19 @@ export default function ReceptionClient({
                 className="input"
                 placeholder="Nom, prénoms ou identifiant…"
                 value={query}
+                aria-label={tab === "abonne" ? "Rechercher un abonné" : "Rechercher un visiteur"}
+                onKeyDown={(e) => {
+                  if (e.key !== "Enter") return;
+                  e.preventDefault();
+                  if (!selected && results.length > 0) {
+                    const first = results[0];
+                    setSelected(first);
+                    setQuery(`${first.lastName} ${first.firstName}`);
+                    setResults([]);
+                  } else {
+                    void submit();
+                  }
+                }}
                 onChange={(e) => {
                   setQuery(e.target.value);
                   setSelected(null);
