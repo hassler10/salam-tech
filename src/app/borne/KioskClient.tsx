@@ -141,7 +141,7 @@ export default function KioskClient({
     const res = await fetch("/api/self/lookup", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ code, lastName }),
+      body: JSON.stringify({ code, lastName, firstName }),
     });
     const json = await res.json().catch(() => ({}));
     setBusy(false);
@@ -234,7 +234,7 @@ export default function KioskClient({
               <Icon name="ticket" className="h-6 w-6" />
             </span>
             <p className="mt-4 font-display text-lg font-semibold text-brand-900">Je suis abonné</p>
-            <p className="mt-1 text-xs text-slate-500">Avec ma carte ou mon identifiant</p>
+            <p className="mt-1 text-xs text-slate-500">Avec ma carte de membre</p>
           </button>
           <button
             onClick={() => setMode("visiteur")}
@@ -262,14 +262,15 @@ export default function KioskClient({
             <div className="text-center">
               <p className="eyebrow justify-center">Étape 1 · Identification</p>
               <p className="mt-1.5 text-sm text-slate-500">
-                Saisissez votre identifiant d&apos;abonné et votre nom de famille.
+                Saisissez le numéro de carte, votre nom et vos prénoms, exactement comme
+                sur votre carte de membre.
               </p>
             </div>
             <div>
-              <label className="label">Identifiant d&apos;abonné</label>
+              <label className="label">Numéro de carte</label>
               <input
                 className="input h-12 text-center text-base tracking-wider"
-                placeholder="AB-2026-0001"
+                placeholder="BSN-2026-000001"
                 value={code}
                 onChange={(e) => setCode(e.target.value)}
                 autoFocus
@@ -282,6 +283,15 @@ export default function KioskClient({
                 className="input h-12 text-center text-base"
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
+                required
+              />
+            </div>
+            <div>
+              <label className="label">Prénoms</label>
+              <input
+                className="input h-12 text-center text-base"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
                 required
               />
             </div>

@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import { db } from "@/db";
-import { subscribers, visits, visitReasons } from "@/db/schema";
-import { sql, eq, and, gte } from "drizzle-orm";
+import { visits, visitReasons } from "@/db/schema";
+import { eq, and, gte } from "drizzle-orm";
 import { rateLimit, clientIp } from "@/lib/ratelimit";
 import { getSettingsMap } from "@/lib/seed";
 import { createVisitorRecord } from "@/lib/visitors";
+import { findSubscriberByIdentity } from "@/lib/identity";
 import { logAudit } from "@/lib/auth";
 
 const AGENT_LABEL = "Borne d'auto-enregistrement";
@@ -41,33 +42,50 @@ export async function POST(req: Request) {
   let subscriberId: number | null = null;
   let visitorId: number | null = null;
   let displayName = "";
+  let firstNameForResponse = "";
   let organization: string | null = null;
 
   if (personType === "abonne") {
     // Re-vérification serveur : l'identité ne peut pas être falsifiée côté navigateur.
     const code = String(b.code ?? "").trim();
     const lastName = String(b.lastName ?? "").trim();
-    if (!code || code.length > 48 || !lastName || lastName.length > 120) {
+    const firstName = String(b.firstName ?? "").trim();
+    if (
+      !code ||
+      code.length > 48 ||
+      !lastName ||
+      lastName.length > 120 ||
+      !firstName ||
+      firstName.length > 180
+    ) {
       return NextResponse.json({ error: "Identification impossible." }, { status: 400 });
     }
-    const rows = await db
-      .select()
-      .from(subscribers)
-      .where(
-        sql`(lower(${subscribers.cardNumber}) = lower(${code}) or lower(${subscribers.code}) = lower(${code}))
-            and lower(${subscribers.lastName}) = lower(${lastName})`,
-      )
-      .limit(1);
-    const s = rows[0];
+    const s = await findSubscriberByIdentity(code, lastName, firstName);
     if (!s) return NextResponse.json({ error: "Identification impossible." }, { status: 404 });
-    if ((settings.require_registered_card ?? "0") === "1" && s.source !== "import") {
-      return NextResponse.json(
-        { error: "Carte non reconnue par le registre officiel." },
-        { status: 403 },
-      );
+    const strict = (settings.require_registered_card ?? "0") === "1";
+    if (strict) {
+      if (!settings.media_salam_last_sync_at) {
+        return NextResponse.json(
+          { error: "Le registre officiel n'est pas encore synchronisé." },
+          { status: 503 },
+        );
+      }
+      if (s.source !== "media_salam") {
+        return NextResponse.json(
+          { error: "Carte non reconnue par le registre officiel." },
+          { status: 403 },
+        );
+      }
+      if (s.status !== "actif") {
+        return NextResponse.json(
+          { error: "Carte inactive dans le registre officiel." },
+          { status: 403 },
+        );
+      }
     }
     subscriberId = s.id;
     displayName = `${s.lastName} ${s.firstName}`;
+    firstNameForResponse = s.firstName;
   } else {
     const lastName = String(b.lastName ?? "").trim();
     const firstName = String(b.firstName ?? "").trim();
@@ -86,6 +104,7 @@ export async function POST(req: Request) {
     });
     visitorId = v.id;
     displayName = `${v.lastName} ${v.firstName}`;
+    firstNameForResponse = v.firstName;
   }
 
   // Anti-doublon : même personne enregistrée deux fois de suite.
@@ -124,7 +143,7 @@ export async function POST(req: Request) {
   // Réponse minimale : aucune donnée d'une autre personne.
   return NextResponse.json({
     ok: true,
-    data: { firstName: displayName.split(" ").slice(1).join(" ") || displayName, at: created.occurredAt },
+    data: { firstName: firstNameForResponse, at: created.occurredAt },
   });
 }
 

@@ -78,6 +78,7 @@ export async function ensureSeed() {
         { key: "duplicate_window_minutes", value: "30" },
         { key: "session_timeout_minutes", value: "60" },
         { key: "self_service_enabled", value: "1" },
+        { key: "require_registered_card", value: "0" },
       ]);
     }
     await db
@@ -85,6 +86,10 @@ export async function ensureSeed() {
       .values(
         Object.entries(PUBLIC_DEFAULTS).map(([key, value]) => ({ key, value })),
       )
+      .onConflictDoNothing();
+    await db
+      .insert(settings)
+      .values({ key: "require_registered_card", value: "0" })
       .onConflictDoNothing();
     done = true;
   } catch {

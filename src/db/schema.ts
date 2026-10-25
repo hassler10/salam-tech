@@ -53,11 +53,13 @@ export const subscribers = pgTable(
     code: varchar("code", { length: 24 }).notNull(),
     /** Numéro figurant sur la carte émise par la plateforme existante. */
     cardNumber: varchar("card_number", { length: 48 }),
-    /** 'interne' = créé ici, 'import' = provenant du registre officiel. */
+    /** Identifiant stable de la fiche dans media-salam (survit à un changement de carte). */
+    externalRef: varchar("external_ref", { length: 64 }),
+    /** 'interne' = créé ici, 'import' = ancien import CSV, 'media_salam' = registre synchronisé. */
     source: varchar("source", { length: 16 }).notNull().default("interne"),
     importedAt: timestamp("imported_at", { withTimezone: true }),
-    lastName: varchar("last_name", { length: 100 }).notNull(),
-    firstName: varchar("first_name", { length: 120 }).notNull(),
+    lastName: varchar("last_name", { length: 120 }).notNull(),
+    firstName: varchar("first_name", { length: 180 }).notNull(),
     phone: varchar("phone", { length: 40 }),
     email: varchar("email", { length: 120 }),
     note: text("note"),
@@ -69,6 +71,7 @@ export const subscribers = pgTable(
   (t) => [
     uniqueIndex("subscribers_code_idx").on(t.code),
     uniqueIndex("subscribers_card_idx").on(t.cardNumber),
+    uniqueIndex("subscribers_external_ref_idx").on(t.externalRef),
     index("subscribers_name_idx").on(t.lastName, t.firstName),
   ],
 );
