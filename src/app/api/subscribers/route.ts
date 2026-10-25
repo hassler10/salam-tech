@@ -3,7 +3,7 @@ import { db } from "@/db";
 import { subscribers, subscriptionPeriods, subscriptionTypes } from "@/db/schema";
 import { eq, or, ilike, sql } from "drizzle-orm";
 import { getCurrentUser, can, logAudit } from "@/lib/auth";
-import { addMonths, isIsoDay, todayIso } from "@/lib/subscriptions";
+import { addDays, isIsoDay, todayIso } from "@/lib/subscriptions";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const MAX_LAST_NAME = 100;
@@ -134,8 +134,8 @@ export async function POST(req: Request) {
       typeId: type.id,
       typeName: type.name,
       startDate,
-      endDate: addMonths(startDate, type.durationMonths),
-      durationMonths: type.durationMonths,
+      endDate: addDays(startDate, type.durationDays),
+      durationDays: type.durationDays,
       createdBy: user?.id ?? null,
     });
   }

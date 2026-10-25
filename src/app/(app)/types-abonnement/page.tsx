@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 export default async function TypesPage() {
   const user = await getCurrentUser();
   if (!can(user?.role, "types.write")) redirect("/dashboard");
-  const types = await db.select().from(subscriptionTypes).orderBy(subscriptionTypes.durationMonths);
+  const types = await db.select().from(subscriptionTypes).orderBy(subscriptionTypes.durationDays);
   return (
     <div>
       <PageHeader

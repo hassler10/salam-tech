@@ -7,11 +7,14 @@ import { getSettingsMap } from "@/lib/seed";
 import { createVisitorRecord } from "@/lib/visitors";
 import { findSubscriberByIdentity } from "@/lib/identity";
 import { logAudit } from "@/lib/auth";
+import { refreshMediaSalamIfDue } from "@/lib/media-salam";
+
+export const maxDuration = 60;
 
 const AGENT_LABEL = "Borne d'auto-enregistrement";
 
 export async function POST(req: Request) {
-  const settings = await getSettingsMap();
+  let settings = await getSettingsMap();
   if ((settings.self_service_enabled ?? "1") !== "1") {
     return NextResponse.json({ error: "La borne est désactivée." }, { status: 403 });
   }
@@ -60,10 +63,20 @@ export async function POST(req: Request) {
     ) {
       return NextResponse.json({ error: "Identification impossible." }, { status: 400 });
     }
-    const s = await findSubscriberByIdentity(code, lastName, firstName);
-    if (!s) return NextResponse.json({ error: "Identification impossible." }, { status: 404 });
+    let s = await findSubscriberByIdentity(code, lastName, firstName);
     const strict = (settings.require_registered_card ?? "0") === "1";
-    if (strict) {
+    if (
+      !s ||
+      (strict &&
+        (!settings.media_salam_last_sync_at || s.source !== "media_salam" || s.status !== "actif"))
+    ) {
+      await refreshMediaSalamIfDue();
+      settings = await getSettingsMap();
+      s = (await findSubscriberByIdentity(code, lastName, firstName)) ?? s;
+    }
+    if (!s) return NextResponse.json({ error: "Identification impossible." }, { status: 404 });
+    const strictNow = (settings.require_registered_card ?? "0") === "1";
+    if (strictNow) {
       if (!settings.media_salam_last_sync_at) {
         return NextResponse.json(
           { error: "Le registre officiel n'est pas encore synchronisé." },

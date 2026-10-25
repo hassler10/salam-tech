@@ -40,7 +40,7 @@ export const sessions = pgTable(
 export const subscriptionTypes = pgTable("subscription_types", {
   id: serial("id").primaryKey(),
   name: varchar("name", { length: 80 }).notNull(),
-  durationMonths: integer("duration_months").notNull().default(1),
+  durationDays: integer("duration_days").notNull().default(1),
   description: text("description"),
   active: boolean("active").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -85,7 +85,7 @@ export const subscriptionPeriods = pgTable(
     typeName: varchar("type_name", { length: 80 }).notNull(),
     startDate: date("start_date").notNull(),
     endDate: date("end_date").notNull(),
-    durationMonths: integer("duration_months").notNull(),
+    durationDays: integer("duration_days").notNull(),
     createdBy: integer("created_by").references(() => users.id),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },

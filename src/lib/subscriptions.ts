@@ -18,17 +18,33 @@ export const STATUS_COLOR: Record<SubStatus, string> = {
   suspendu: "bg-slate-300 text-slate-800 dark:bg-slate-600 dark:text-slate-100",
 };
 
-export function addMonths(isoDate: string, months: number): string {
+/** Fin de période inclusive : un abonnement d'un jour commence et se termine le même jour. */
+export function addDays(isoDate: string, days: number): string {
   const [y, m, d] = isoDate.split("-").map(Number);
-  const base = new Date(Date.UTC(y, m - 1, d));
-  const targetMonth = base.getUTCMonth() + months;
-  const end = new Date(Date.UTC(base.getUTCFullYear(), targetMonth, base.getUTCDate()));
-  if (end.getUTCDate() !== base.getUTCDate()) {
-    // overflow (e.g. 31 janv + 1 mois) -> dernier jour du mois cible
-    end.setUTCDate(0);
-  }
-  end.setUTCDate(end.getUTCDate() - 1); // période inclusive
+  const end = new Date(Date.UTC(y, m - 1, d + Math.max(1, Math.round(days)) - 1));
   return end.toISOString().slice(0, 10);
+}
+
+/** Nombre de jours couverts entre deux dates, bornes incluses. */
+export function daysBetween(start: string, end: string): number {
+  const [sy, sm, sd] = start.split("-").map(Number);
+  const [ey, em, ed] = end.split("-").map(Number);
+  const from = Date.UTC(sy, sm - 1, sd);
+  const to = Date.UTC(ey, em - 1, ed);
+  return Math.round((to - from) / 86400000) + 1;
+}
+
+/** Affiche 1 jour, 1 semaine, 1 an, 2 semaines, 30 jours, etc. */
+export function durationParts(days: number): { value: number; unit: string } {
+  const safe = Math.max(1, Math.round(days));
+  if (safe % 365 === 0) return { value: safe / 365, unit: safe === 365 ? "an" : "ans" };
+  if (safe % 7 === 0) return { value: safe / 7, unit: safe === 7 ? "semaine" : "semaines" };
+  return { value: safe, unit: safe === 1 ? "jour" : "jours" };
+}
+
+export function durationLabel(days: number): string {
+  const { value, unit } = durationParts(days);
+  return `${value} ${unit}`;
 }
 
 export function daysLeft(endDate: string | null | undefined): number | null {

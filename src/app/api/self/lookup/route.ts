@@ -6,6 +6,9 @@ import { rateLimit, clientIp } from "@/lib/ratelimit";
 import { getSettingsMap, getThresholds } from "@/lib/seed";
 import { computeStatus, STATUS_LABEL } from "@/lib/subscriptions";
 import { findSubscriberByIdentity } from "@/lib/identity";
+import { refreshMediaSalamIfDue } from "@/lib/media-salam";
+
+export const maxDuration = 60;
 
 /**
  * Borne d'auto-identification d'un abonné.
@@ -13,7 +16,7 @@ import { findSubscriberByIdentity } from "@/lib/identity";
  * que le prénom et l'état nécessaires à la confirmation de la visite.
  */
 export async function POST(req: Request) {
-  const settings = await getSettingsMap();
+  let settings = await getSettingsMap();
   if ((settings.self_service_enabled ?? "1") !== "1") {
     return NextResponse.json({ error: "La borne est désactivée." }, { status: 403 });
   }
@@ -43,7 +46,22 @@ export async function POST(req: Request) {
 
   // Accepte le numéro de carte de la plateforme existante OU l'identifiant interne,
   // mais toujours avec les deux noms de la carte.
-  const s = await findSubscriberByIdentity(code, lastName, firstName);
+  let s = await findSubscriberByIdentity(code, lastName, firstName);
+  const strict = (settings.require_registered_card ?? "0") === "1";
+
+  // Carte inconnue ou refusée par le mode strict : on relit le registre officiel
+  // avant de répondre. Une fiche saisie dans media-salam est ainsi reconnue sans
+  // synchronisation manuelle ; la lecture est limitée à une tentative toutes les 30 s.
+  if (
+    !s ||
+    (strict &&
+      (!settings.media_salam_last_sync_at || s.source !== "media_salam" || s.status !== "actif"))
+  ) {
+    await refreshMediaSalamIfDue();
+    settings = await getSettingsMap();
+    s = (await findSubscriberByIdentity(code, lastName, firstName)) ?? s;
+  }
+
   // Message volontairement générique : empêche de deviner les identifiants existants.
   if (!s) {
     return NextResponse.json(
@@ -52,8 +70,8 @@ export async function POST(req: Request) {
     );
   }
 
-  const strict = (settings.require_registered_card ?? "0") === "1";
-  if (strict) {
+  const strictNow = (settings.require_registered_card ?? "0") === "1";
+  if (strictNow) {
     if (!settings.media_salam_last_sync_at) {
       return NextResponse.json(
         {

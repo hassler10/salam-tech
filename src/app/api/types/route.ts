@@ -17,7 +17,7 @@ function readDescription(value: unknown): string | null | undefined {
 
 function readDuration(value: unknown): number | null {
   const n = Number(value);
-  return Number.isInteger(n) && n >= 1 && n <= 120 ? n : null;
+  return Number.isInteger(n) && n >= 1 && n <= 3650 ? n : null;
 }
 
 export async function GET() {
@@ -28,7 +28,7 @@ export async function GET() {
         .select({
           id: subscriptionTypes.id,
           name: subscriptionTypes.name,
-          durationMonths: subscriptionTypes.durationMonths,
+          durationDays: subscriptionTypes.durationDays,
           description: subscriptionTypes.description,
           active: subscriptionTypes.active,
         })
@@ -47,20 +47,20 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Requête invalide." }, { status: 400 });
   }
   const name = typeof b.name === "string" ? b.name.trim() : "";
-  const durationMonths = readDuration(b.durationMonths);
+  const durationDays = readDuration(b.durationDays);
   const description = readDescription(b.description);
   if (!name || name.length > MAX_NAME) {
     return NextResponse.json({ error: `Nom obligatoire (${MAX_NAME} caractères max.).` }, { status: 400 });
   }
-  if (durationMonths === null) {
-    return NextResponse.json({ error: "La durée doit être un nombre entier entre 1 et 120 mois." }, { status: 400 });
+  if (durationDays === null) {
+    return NextResponse.json({ error: "La durée doit être un nombre entier entre 1 et 3650 jours." }, { status: 400 });
   }
   if (description === undefined) {
     return NextResponse.json({ error: "Description invalide (2000 caractères max.)." }, { status: 400 });
   }
   const [t] = await db
     .insert(subscriptionTypes)
-    .values({ name, durationMonths, description })
+    .values({ name, durationDays, description })
     .returning();
   await logAudit(user, "création type d'abonnement", "type", t.id, name);
   return NextResponse.json({ data: t });
@@ -89,12 +89,12 @@ export async function PATCH(req: Request) {
     patch.name = name;
     changed.push("nom");
   }
-  if (b.durationMonths !== undefined) {
-    const duration = readDuration(b.durationMonths);
+  if (b.durationDays !== undefined) {
+    const duration = readDuration(b.durationDays);
     if (duration === null) {
-      return NextResponse.json({ error: "La durée doit être un nombre entier entre 1 et 120 mois." }, { status: 400 });
+      return NextResponse.json({ error: "La durée doit être un nombre entier entre 1 et 3650 jours." }, { status: 400 });
     }
-    patch.durationMonths = duration;
+    patch.durationDays = duration;
     changed.push("durée");
   }
   if (b.description !== undefined) {

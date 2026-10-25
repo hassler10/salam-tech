@@ -8,6 +8,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { ensureSeed } from "@/lib/seed";
 import { getPublicContent } from "@/lib/public-content";
 import { getBranding } from "@/lib/branding";
+import { durationLabel, durationParts } from "@/lib/subscriptions";
 import { Icon, type IconName } from "@/components/icons";
 
 export const dynamic = "force-dynamic";
@@ -54,18 +55,18 @@ export default async function Home() {
   await ensureSeed();
   const [content, user] = await Promise.all([getPublicContent(), getCurrentUser()]);
 
-  let types: { id: number; name: string; durationMonths: number; description: string | null }[] = [];
+  let types: { id: number; name: string; durationDays: number; description: string | null }[] = [];
   try {
     types = await db
       .select({
         id: subscriptionTypes.id,
         name: subscriptionTypes.name,
-        durationMonths: subscriptionTypes.durationMonths,
+        durationDays: subscriptionTypes.durationDays,
         description: subscriptionTypes.description,
       })
       .from(subscriptionTypes)
       .where(eq(subscriptionTypes.active, true))
-      .orderBy(asc(subscriptionTypes.durationMonths));
+      .orderBy(asc(subscriptionTypes.durationDays));
   } catch {
     // La vitrine doit rester consultable si la base est momentanément indisponible.
   }
@@ -73,15 +74,14 @@ export default async function Home() {
   const formulas =
     types.length > 0
       ? types
-      : [1, 3, 6, 12].map((months) => ({
-          id: months,
-          name: `Abonnement ${months} mois`,
-          durationMonths: months,
-          description: null,
-        }));
+      : [
+          { id: 1, name: "Journalier", durationDays: 1, description: "Accès valable une journée" },
+          { id: 7, name: "Hebdomadaire", durationDays: 7, description: "Accès valable une semaine" },
+          { id: 365, name: "Annuel", durationDays: 365, description: "Accès valable une année" },
+        ];
 
-  const shortest = Math.min(...formulas.map((f) => f.durationMonths));
-  const longest = Math.max(...formulas.map((f) => f.durationMonths));
+  const shortest = Math.min(...formulas.map((f) => f.durationDays));
+  const longest = Math.max(...formulas.map((f) => f.durationDays));
   const spaceHref = user ? (user.role === "agent" ? "/accueil" : "/dashboard") : "/login";
   const spaceLabel = user ? "Mon espace" : "Espace de gestion";
   const mapHref =
@@ -250,7 +250,7 @@ export default async function Home() {
             </span>
             <span className="min-w-0">
               <span className="block text-[9.5px] font-semibold uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">Abonnements</span>
-              <span className="mt-0.5 block truncate text-[12px] font-semibold leading-5 text-slate-800 dark:text-slate-100">Formules de {shortest} à {longest} mois</span>
+              <span className="mt-0.5 block truncate text-[12px] font-semibold leading-5 text-slate-800 dark:text-slate-100">Formules de {durationLabel(shortest)} à {durationLabel(longest)}</span>
             </span>
           </div>
           <div className="flex min-w-0 items-center gap-3 rounded-2xl px-2 py-1">
@@ -359,32 +359,35 @@ export default async function Home() {
           )}
         </div>
 
-        <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {formulas.map((f) => (
-            <div
-              key={f.id}
-              className="flex flex-col rounded-3xl border border-brand-900/[0.07] bg-[var(--surface)]/85 p-6 shadow-soft backdrop-blur-xl transition hover:border-gold-500/35 hover:shadow-glow dark:border-white/[0.08] dark:bg-[var(--surface)]/70 dark:shadow-none"
-            >
-              <div className="flex items-baseline gap-1.5">
-                <span className="font-display text-[40px] font-semibold leading-none tracking-tight text-brand-800 dark:text-gold-300">
-                  {f.durationMonths}
-                </span>
-                <span className="text-[12px] font-semibold uppercase tracking-[0.14em] text-slate-400 dark:text-slate-500">
-                  mois
+        <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {formulas.map((f) => {
+            const duration = durationParts(f.durationDays);
+            return (
+              <div
+                key={f.id}
+                className="flex flex-col rounded-3xl border border-brand-900/[0.07] bg-[var(--surface)]/85 p-6 shadow-soft backdrop-blur-xl transition hover:border-gold-500/35 hover:shadow-glow dark:border-white/[0.08] dark:bg-[var(--surface)]/70 dark:shadow-none"
+              >
+                <div className="flex items-baseline gap-1.5">
+                  <span className="font-display text-[40px] font-semibold leading-none tracking-tight text-brand-800 dark:text-gold-300">
+                    {duration.value}
+                  </span>
+                  <span className="text-[12px] font-semibold uppercase tracking-[0.14em] text-slate-400 dark:text-slate-500">
+                    {duration.unit}
+                  </span>
+                </div>
+                <p className="mt-4 text-[13px] font-semibold text-slate-900 dark:text-white">
+                  {f.name}
+                </p>
+                <p className="mt-1.5 flex-1 text-[11.5px] leading-6 text-slate-500 dark:text-slate-400">
+                  {f.description || "Formule d'abonnement de la bibliothèque."}
+                </p>
+                <span className="mt-5 inline-flex items-center gap-1.5 border-t border-brand-900/[0.06] pt-4 text-[11px] font-semibold text-brand-700 dark:border-white/[0.08] dark:text-gold-300">
+                  <Icon name="check" className="h-3.5 w-3.5" />
+                  Accès aux services de la bibliothèque
                 </span>
               </div>
-              <p className="mt-4 text-[13px] font-semibold text-slate-900 dark:text-white">
-                {f.name}
-              </p>
-              <p className="mt-1.5 flex-1 text-[11.5px] leading-6 text-slate-500 dark:text-slate-400">
-                {f.description || "Formule d'abonnement de la bibliothèque."}
-              </p>
-              <span className="mt-5 inline-flex items-center gap-1.5 border-t border-brand-900/[0.06] pt-4 text-[11px] font-semibold text-brand-700 dark:border-white/[0.08] dark:text-gold-300">
-                <Icon name="check" className="h-3.5 w-3.5" />
-                Accès aux services de la bibliothèque
-              </span>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </section>
 

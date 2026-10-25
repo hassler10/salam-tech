@@ -46,10 +46,9 @@ export async function ensureSeed() {
     const t = await db.select({ c: sql<number>`count(*)::int` }).from(subscriptionTypes);
     if ((t[0]?.c ?? 0) === 0) {
       await db.insert(subscriptionTypes).values([
-        { name: "Abonnement 1 mois", durationMonths: 1, description: "Validité d'un mois" },
-        { name: "Abonnement 3 mois", durationMonths: 3, description: "Validité de trois mois" },
-        { name: "Abonnement 6 mois", durationMonths: 6, description: "Validité de six mois" },
-        { name: "Abonnement 12 mois", durationMonths: 12, description: "Validité de douze mois" },
+        { name: "Journalier", durationDays: 1, description: "Accès valable une journée" },
+        { name: "Hebdomadaire", durationDays: 7, description: "Accès valable une semaine" },
+        { name: "Annuel", durationDays: 365, description: "Accès valable une année" },
       ]);
     }
 

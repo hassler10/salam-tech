@@ -1,7 +1,7 @@
 import { db } from "@/db";
 import { settings, subscribers, subscriptionPeriods } from "@/db/schema";
 import { eq, sql } from "drizzle-orm";
-import { isIsoDay } from "./subscriptions";
+import { daysBetween, isIsoDay } from "./subscriptions";
 
 export const MEDIA_SALAM_SOURCE = "media_salam";
 export const MEDIA_SALAM_PERIOD = "Registre media-salam";
@@ -14,6 +14,7 @@ const LOGIN_PATH = "/api/auth/login";
 const BACKUP_PATH = "/api/backup";
 const MAX_SUBSCRIBERS = 50_000;
 const SYNC_LOCK_KEY = 812746321;
+const AUTO_SYNC_COOLDOWN_MS = 30_000;
 
 export class MediaSalamError extends Error {
   status: number;
@@ -333,14 +334,6 @@ function mergeNote(current: string | null, profession: string | null): string | 
   return profession ? `${marker}${profession}` : null;
 }
 
-function monthsBetween(start: string, end: string): number {
-  const [startYear, startMonth, startDay] = start.split("-").map(Number);
-  const [endYear, endMonth, endDay] = end.split("-").map(Number);
-  let months = (endYear - startYear) * 12 + (endMonth - startMonth) + 1;
-  if (endDay < startDay) months -= 1;
-  return Math.max(1, months);
-}
-
 /** Analyse une sauvegarde sans rien écrire. */
 export async function previewMediaSalam(payload: unknown): Promise<SyncPreview> {
   const normalized = normalizeBackup(payload);
@@ -528,7 +521,7 @@ export async function syncMediaSalam(
         counts.crees += 1;
       }
 
-      const durationMonths = monthsBetween(row.registrationDate, row.validityDate);
+      const durationDays = daysBetween(row.registrationDate, row.validityDate);
       const currentPeriod = latestPeriod.get(subscriberId);
       if (!currentPeriod) {
         await tx.insert(subscriptionPeriods).values({
@@ -537,21 +530,21 @@ export async function syncMediaSalam(
           typeName: MEDIA_SALAM_PERIOD,
           startDate: row.registrationDate,
           endDate: row.validityDate,
-          durationMonths,
+          durationDays,
           createdBy: null,
         });
         periodChanged = true;
       } else if (
         currentPeriod.startDate !== row.registrationDate ||
         currentPeriod.endDate !== row.validityDate ||
-        currentPeriod.durationMonths !== durationMonths
+        currentPeriod.durationDays !== durationDays
       ) {
         await tx
           .update(subscriptionPeriods)
           .set({
             startDate: row.registrationDate,
             endDate: row.validityDate,
-            durationMonths,
+            durationDays,
           })
           .where(eq(subscriptionPeriods.id, currentPeriod.id));
         periodChanged = true;
@@ -615,6 +608,55 @@ export async function recordMediaSalamFailure(message: string): Promise<void> {
   } catch {
     // L'état de synchronisation ne doit pas masquer l'erreur d'origine.
   }
+}
+
+export type AutoSyncResult = "synced" | "skipped" | "failed";
+
+let autoSyncInFlight: Promise<AutoSyncResult> | null = null;
+
+/** Réservation atomique du créneau : une seule instance peut lancer la lecture. */
+async function claimAutoSync(nowIso: string, thresholdIso: string): Promise<boolean> {
+  const result = await db.execute(sql`
+    insert into settings (key, value)
+    values ('media_salam_last_attempt_at', ${nowIso})
+    on conflict (key) do update set value = excluded.value
+    where settings.value < ${thresholdIso}
+    returning key
+  `);
+  return result.rows.length > 0;
+}
+
+/**
+ * Relit le registre officiel au plus toutes les 30 secondes.
+ * Appelée quand la borne ne reconnaît pas une carte : une fiche saisie dans
+ * media-salam devient disponible sans action manuelle, même entre deux crons.
+ */
+export async function refreshMediaSalamIfDue(): Promise<AutoSyncResult> {
+  if (!getMediaSalamConfig().configured) return "skipped";
+  if (autoSyncInFlight) return autoSyncInFlight;
+
+  const promise = (async (): Promise<AutoSyncResult> => {
+    const now = new Date();
+    const threshold = new Date(now.getTime() - AUTO_SYNC_COOLDOWN_MS).toISOString();
+    try {
+      if (!(await claimAutoSync(now.toISOString(), threshold))) return "skipped";
+    } catch {
+      return "skipped";
+    }
+    try {
+      const payload = await fetchMediaSalamBackup();
+      await syncMediaSalam(payload, { mode: "auto" });
+      return "synced";
+    } catch (e) {
+      await recordMediaSalamFailure(e instanceof Error ? e.message : "Erreur inconnue");
+      return "failed";
+    }
+  })().finally(() => {
+    autoSyncInFlight = null;
+  });
+
+  autoSyncInFlight = promise;
+  return promise;
 }
 
 export function readMediaSalamState(map: Record<string, string>): MediaSalamState {

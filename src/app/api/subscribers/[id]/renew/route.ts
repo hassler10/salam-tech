@@ -3,7 +3,7 @@ import { db } from "@/db";
 import { subscribers, subscriptionPeriods, subscriptionTypes } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { getCurrentUser, can, logAudit } from "@/lib/auth";
-import { addMonths, isIsoDay, todayIso } from "@/lib/subscriptions";
+import { addDays, isIsoDay, todayIso } from "@/lib/subscriptions";
 
 export async function POST(req: Request, ctx: { params: Promise<{ id: string }> }) {
   const user = await getCurrentUser();
@@ -55,8 +55,8 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
       typeId: t[0].id,
       typeName: t[0].name,
       startDate: start,
-      endDate: addMonths(start, t[0].durationMonths),
-      durationMonths: t[0].durationMonths,
+      endDate: addDays(start, t[0].durationDays),
+      durationDays: t[0].durationDays,
       createdBy: user?.id ?? null,
     })
     .returning();

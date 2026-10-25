@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { todayIso } from "@/lib/subscriptions";
+import { durationLabel, todayIso } from "@/lib/subscriptions";
 import { Icon } from "@/components/icons";
 
-type Type = { id: number; name: string; durationMonths: number };
+type Type = { id: number; name: string; durationDays: number };
 
 export default function SubscriberActions({
   subscriberId,
@@ -53,7 +53,7 @@ export default function SubscriberActions({
         <p className="text-xs font-bold uppercase text-slate-500">Renouvellement d&apos;abonnement</p>
         <select className="input" value={typeId} onChange={(e) => setTypeId(Number(e.target.value))}>
           {types.map((t) => (
-            <option key={t.id} value={t.id}>{t.name} ({t.durationMonths} mois)</option>
+            <option key={t.id} value={t.id}>{t.name} ({durationLabel(t.durationDays)})</option>
           ))}
         </select>
         <input type="date" className="input" value={startDate} onChange={(e) => setStartDate(e.target.value)} />

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { listSubscribers } from "@/lib/queries";
 import { getThresholds } from "@/lib/seed";
+import { durationLabel } from "@/lib/subscriptions";
 import { PageHeader, StatCard, StatCardIcon, StatusBadge, ReportHeader } from "@/components/ui";
 import PrintButton from "@/components/PrintButton";
 
@@ -51,7 +52,7 @@ export default async function SuiviAbonnements() {
                       <td><Link href={`/abonnes/${s.id}`} className="font-semibold text-[#166534] hover:underline dark:text-[#c5a253]">{s.lastName} {s.firstName}</Link></td>
                       <td>{s.typeName ?? "—"}</td>
                       <td>{s.startDate ?? "—"}</td>
-                      <td>{s.durationMonths ? `${s.durationMonths} mois` : "—"}</td>
+                      <td>{s.durationDays ? durationLabel(s.durationDays) : "—"}</td>
                       <td>{s.endDate ?? "—"}</td>
                       <td>{s.daysLeft !== null ? `${s.daysLeft} j` : "—"}</td>
                       <td><StatusBadge status={s.computed} /></td>

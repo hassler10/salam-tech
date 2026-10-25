@@ -4,6 +4,7 @@ import { subscriptionTypes } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import QRCode from "qrcode";
 import { getSubscriber } from "@/lib/queries";
+import { durationLabel } from "@/lib/subscriptions";
 import { getBranding } from "@/lib/branding";
 import { PageHeader, StatCard, StatCardIcon, StatusBadge, ReportHeader } from "@/components/ui";
 import SubscriberActions from "./SubscriberActions";
@@ -56,7 +57,7 @@ export default async function FicheAbonne({ params }: { params: Promise<{ id: st
               <dl className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-3">
                 <div><dt className="label">Type</dt><dd>{data.current.typeName}</dd></div>
                 <div><dt className="label">Début</dt><dd>{data.current.startDate}</dd></div>
-                <div><dt className="label">Durée</dt><dd>{data.current.durationMonths} mois</dd></div>
+                <div><dt className="label">Durée</dt><dd>{durationLabel(data.current.durationDays)}</dd></div>
                 <div><dt className="label">Expiration</dt><dd>{data.current.endDate}</dd></div>
                 <div><dt className="label">Jours restants</dt><dd>{data.daysLeft} j</dd></div>
                 <div><dt className="label">Statut</dt><dd><StatusBadge status={data.computed} /></dd></div>
@@ -76,7 +77,7 @@ export default async function FicheAbonne({ params }: { params: Promise<{ id: st
                   {data.periods.map((p) => (
                     <tr key={p.id}>
                       <td>{p.typeName}</td><td>{p.startDate}</td><td>{p.endDate}</td>
-                      <td>{p.durationMonths} mois</td>
+                      <td>{durationLabel(p.durationDays)}</td>
                       <td>{new Date(p.createdAt).toLocaleDateString("fr-FR")}</td>
                     </tr>
                   ))}

@@ -2,13 +2,13 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { addMonths, todayIso } from "@/lib/subscriptions";
+import { addDays, durationLabel, todayIso } from "@/lib/subscriptions";
 
-type T = { id: number; name: string; durationMonths: number; description: string; active: boolean };
+type T = { id: number; name: string; durationDays: number; description: string; active: boolean };
 
 export default function TypesClient({ types }: { types: T[] }) {
   const router = useRouter();
-  const [form, setForm] = useState({ name: "", durationMonths: 1, description: "" });
+  const [form, setForm] = useState({ name: "", durationDays: 1, description: "" });
   const [msg, setMsg] = useState("");
 
   const create = async (e: React.FormEvent) => {
@@ -21,7 +21,7 @@ export default function TypesClient({ types }: { types: T[] }) {
     const json = await res.json().catch(() => ({}));
     setMsg(res.ok ? "Type d'abonnement créé." : (json.error ?? "Erreur."));
     if (res.ok) {
-      setForm({ name: "", durationMonths: 1, description: "" });
+      setForm({ name: "", durationDays: 1, description: "" });
       router.refresh();
     }
   };
@@ -41,7 +41,7 @@ export default function TypesClient({ types }: { types: T[] }) {
     <div className="space-y-5">
       <form onSubmit={create} className="card grid grid-cols-1 gap-3 sm:grid-cols-4">
         <input className="input" required placeholder="Nom du type *" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-        <input className="input" type="number" min={1} max={120} required placeholder="Durée (mois)" value={form.durationMonths} onChange={(e) => setForm({ ...form, durationMonths: Number(e.target.value) })} />
+        <input className="input" type="number" min={1} max={3650} required placeholder="Durée (jours)" value={form.durationDays} onChange={(e) => setForm({ ...form, durationDays: Number(e.target.value) })} />
         <input className="input" placeholder="Description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
         <button className="btn-primary">Ajouter le type</button>
         {msg && <p className="text-sm font-medium text-[#166534] sm:col-span-4">{msg}</p>}
@@ -54,9 +54,9 @@ export default function TypesClient({ types }: { types: T[] }) {
             {types.map((t) => (
               <tr key={t.id}>
                 <td className="font-semibold">{t.name}</td>
-                <td>{t.durationMonths} mois</td>
+                <td>{durationLabel(t.durationDays)}</td>
                 <td>{t.description || "—"}</td>
-                <td className="text-xs text-slate-500">expire le {addMonths(today, t.durationMonths)}</td>
+                <td className="text-xs text-slate-500">expire le {addDays(today, t.durationDays)}</td>
                 <td>
                   <span className={`badge ${t.active ? "bg-emerald-100 text-emerald-800" : "bg-slate-200 text-slate-600"}`}>
                     {t.active ? "Actif" : "Désactivé"}

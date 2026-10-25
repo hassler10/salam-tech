@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { STATUS_LABEL, STATUS_COLOR, todayIso, type SubStatus } from "@/lib/subscriptions";
+import { STATUS_LABEL, STATUS_COLOR, durationLabel, todayIso, type SubStatus } from "@/lib/subscriptions";
 
 type Sub = {
   id: number;
@@ -20,7 +20,7 @@ type Sub = {
   computed: SubStatus;
   daysLeft: number | null;
 };
-type Type = { id: number; name: string; durationMonths: number };
+type Type = { id: number; name: string; durationDays: number };
 
 const PAGE_SIZE = 10;
 
@@ -120,7 +120,7 @@ export default function SubscribersClient({ subs, types }: { subs: Sub[]; types:
             <label className="label">Type d&apos;abonnement</label>
             <select className="input" value={form.typeId} onChange={(e) => setForm({ ...form, typeId: Number(e.target.value) })}>
               {types.map((t) => (
-                <option key={t.id} value={t.id}>{t.name} ({t.durationMonths} mois)</option>
+                <option key={t.id} value={t.id}>{t.name} ({durationLabel(t.durationDays)})</option>
               ))}
             </select>
           </div>

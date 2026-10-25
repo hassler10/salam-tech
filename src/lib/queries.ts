@@ -15,7 +15,7 @@ export type SubscriberRow = {
   typeName: string | null;
   startDate: string | null;
   endDate: string | null;
-  durationMonths: number | null;
+  durationDays: number | null;
   visitCount: number;
   lastVisit: Date | null;
   computed: SubStatus;
@@ -26,11 +26,11 @@ export async function listSubscribers(): Promise<SubscriberRow[]> {
   const th = await getThresholds();
   const rows = await db.execute(sql`
     select s.id, s.code, s.last_name, s.first_name, s.phone, s.registered_at, s.status,
-      p.type_name, p.start_date, p.end_date, p.duration_months,
+      p.type_name, p.start_date, p.end_date, p.duration_days,
       coalesce(v.cnt, 0) as visit_count, v.last_visit
     from subscribers s
     left join lateral (
-      select type_name, start_date, end_date, duration_months
+      select type_name, start_date, end_date, duration_days
       from subscription_periods sp where sp.subscriber_id = s.id
       order by end_date desc limit 1
     ) p on true
@@ -53,7 +53,7 @@ export async function listSubscribers(): Promise<SubscriberRow[]> {
       typeName: (r.type_name as string) ?? null,
       startDate: r.start_date ? String(r.start_date).slice(0, 10) : null,
       endDate,
-      durationMonths: r.duration_months ? Number(r.duration_months) : null,
+      durationDays: r.duration_days ? Number(r.duration_days) : null,
       visitCount: Number(r.visit_count ?? 0),
       lastVisit: r.last_visit ? new Date(String(r.last_visit)) : null,
       computed: computeStatus(endDate, th, String(r.status)),

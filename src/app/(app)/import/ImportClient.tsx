@@ -11,8 +11,8 @@ type Summary = { crees: number; majs: number; ignores: number; erreurs: number }
 const MAX_BACKUP_BYTES = 5_000_000;
 
 const MODELE = `numero_carte;nom;prenoms;telephone;type;date_debut;date_fin
-BSN-2026-000124;KOUASSI;Ibrahim;+225 0707000001;12 mois;01/01/2026;31/12/2026
-BSN-2026-000125;TRAORE;Aminata;;6 mois;15/03/2026;14/09/2026`;
+BSN-2026-000124;KOUASSI;Ibrahim;+225 0707000001;annuel;01/01/2026;31/12/2026
+BSN-2026-000125;TRAORE;Aminata;;hebdomadaire;15/03/2026;21/03/2026`;
 
 const dateTime = new Intl.DateTimeFormat("fr-FR", {
   dateStyle: "medium",
@@ -200,7 +200,7 @@ export default function ImportClient({
             <p className="mt-1 text-xs text-slate-500">
               Salam Library Pro ne modifie jamais media-salam : il lit uniquement la sauvegarde
               officielle. Les noms, prénoms et numéros de carte de la borne proviennent de cette
-              synchronisation.
+              synchronisation, déclenchée automatiquement à chaque identification à la borne.
             </p>
           </div>
           <span
@@ -232,7 +232,7 @@ export default function ImportClient({
           <div className="rounded-xl bg-slate-50 p-3 dark:bg-slate-800">
             <p className="text-[11px] uppercase tracking-wide text-slate-400">Automatisation</p>
             <p className="mt-1 text-sm font-semibold">
-              {autoConfigured ? "Quotidienne (02:00 UTC)" : "Non configurée"}
+              {autoConfigured ? "Borne + quotidienne (02:00 UTC)" : "Non configurée"}
             </p>
           </div>
         </div>

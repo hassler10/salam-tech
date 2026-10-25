@@ -1,7 +1,7 @@
 import { db } from "@/db";
 import { subscribers, subscriptionPeriods, subscriptionTypes } from "@/db/schema";
 import { sql, eq } from "drizzle-orm";
-import { addMonths, todayIso } from "./subscriptions";
+import { addDays, daysBetween, todayIso } from "./subscriptions";
 
 export type ImportRow = {
   cardNumber: string;
@@ -11,7 +11,7 @@ export type ImportRow = {
   typeName?: string;
   startDate?: string;
   endDate?: string;
-  durationMonths?: number;
+  durationDays?: number;
 };
 
 export type RowResult = {
@@ -35,7 +35,8 @@ const HEADER_ALIASES: Record<string, string> = {
   "date début": "startDate", "date de début": "startDate",
   "fin": "endDate", "expiration": "endDate", "date fin": "endDate", "date de fin": "endDate",
   "date expiration": "endDate", "date d'expiration": "endDate",
-  "duree": "durationMonths", "durée": "durationMonths", "duree mois": "durationMonths", "durée (mois)": "durationMonths",
+  "duree": "durationDays", "durée": "durationDays", "duree jours": "durationDays", "durée (jours)": "durationDays",
+  "duree j": "durationDays", "durée (j)": "durationDays",
 };
 
 function norm(s: string) {
@@ -103,6 +104,7 @@ export function parseCsv(text: string): { rows: ImportRow[]; errors: RowResult[]
       });
       continue;
     }
+    const durationDays = Number(o.durationDays);
     rows.push({
       cardNumber,
       lastName,
@@ -111,7 +113,7 @@ export function parseCsv(text: string): { rows: ImportRow[]; errors: RowResult[]
       typeName: o.typeName || undefined,
       startDate: parseDate(o.startDate) ?? undefined,
       endDate: parseDate(o.endDate) ?? undefined,
-      durationMonths: o.durationMonths ? Number(o.durationMonths) : undefined,
+      durationDays: Number.isInteger(durationDays) && durationDays > 0 ? durationDays : undefined,
     });
   }
   return { rows, errors, headers: rawHeaders };
@@ -187,17 +189,15 @@ export async function applyImport(
       // Période d'abonnement si le fichier en fournit une.
       const start = r.startDate ?? null;
       let end = r.endDate ?? null;
-      let months = r.durationMonths ?? null;
+      let days = r.durationDays ?? null;
       const matched = r.typeName
         ? types.find((t) => t.name.toLowerCase().includes(r.typeName!.toLowerCase().trim()))
         : null;
-      if (!months && matched) months = matched.durationMonths;
-      if (!end && start && months) end = addMonths(start, months);
-      if (end && !months && start) {
-        months = Math.max(1, Math.round((new Date(end).getTime() - new Date(start).getTime()) / 2592000000));
-      }
+      if (!days && matched) days = matched.durationDays;
+      if (!end && start && days) end = addDays(start, days);
+      if (start && end && !days) days = daysBetween(start, end);
 
-      if (start && end) {
+      if (start && end && days && days > 0) {
         const dup = await db
           .select({ id: subscriptionPeriods.id })
           .from(subscriptionPeriods)
@@ -210,7 +210,7 @@ export async function applyImport(
             typeName: r.typeName || matched?.name || "Abonnement importé",
             startDate: start,
             endDate: end,
-            durationMonths: months ?? 1,
+            durationDays: days,
             createdBy: opts.userId ?? null,
           });
         }
