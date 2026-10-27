@@ -2,6 +2,9 @@ import { NextResponse, type NextRequest } from "next/server";
 import { randomUUID } from "crypto";
 
 const MUTATING = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+// Appel serveur à serveur authentifié par HMAC et horodatage, sans cookie de session :
+// le contrôle d'origine s'applique uniquement aux requêtes déclenchées par un navigateur.
+const SIGNATURE_AUTHENTICATED = new Set(["/api/webhooks/media-salam"]);
 const MAX_API_BODY_BYTES = 6_000_000;
 const CSP_EXCLUDED = ["_next/static", "_next/image", "favicon.ico", "sw.js", "manifest.webmanifest"];
 
@@ -29,7 +32,7 @@ function contentSecurityPolicy(nonce: string) {
 
 export function proxy(request: NextRequest) {
   const isApi = request.nextUrl.pathname.startsWith("/api/");
-  if (isApi && MUTATING.has(request.method)) {
+  if (isApi && MUTATING.has(request.method) && !SIGNATURE_AUTHENTICATED.has(request.nextUrl.pathname)) {
     const contentLengthHeader = request.headers.get("content-length");
     const contentLength = contentLengthHeader === null ? null : Number(contentLengthHeader);
     if (
