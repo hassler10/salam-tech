@@ -158,7 +158,7 @@ export default function DataReset() {
   };
 
   return (
-    <section className="card">
+    <section id="data-reset" className="card scroll-mt-24">
       <div className="mb-4">
         <h2 className="section-title">Réinitialiser les données d&apos;une fiche</h2>
         <p className="mt-1 text-[12px] leading-relaxed text-slate-500 dark:text-slate-400">

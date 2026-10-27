@@ -71,6 +71,15 @@ export default async function DashboardPage() {
                 <Icon name="users" className="h-4 w-4" />
                 Gérer les abonnés
               </Link>
+              {user?.role === "admin" && (
+                <Link
+                  href="/parametres#data-reset"
+                  className="inline-flex items-center gap-2 rounded-xl border border-rose-200/30 bg-rose-500/10 px-4 py-2.5 text-[12.5px] font-semibold text-rose-50 backdrop-blur transition hover:bg-rose-500/20"
+                >
+                  <Icon name="refresh" className="h-4 w-4" />
+                  Nettoyer les données de test
+                </Link>
+              )}
             </div>
           </div>
 
