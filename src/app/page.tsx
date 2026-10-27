@@ -9,7 +9,6 @@ import { ensureSeed } from "@/lib/seed";
 import { getPublicContent } from "@/lib/public-content";
 import { getBranding } from "@/lib/branding";
 import { durationLabel, durationParts } from "@/lib/subscriptions";
-import { isSelfServiceGateConfigured } from "@/lib/self-service-gate";
 import { Icon, type IconName } from "@/components/icons";
 
 export const dynamic = "force-dynamic";
@@ -87,7 +86,7 @@ export default async function Home() {
   const spaceLabel = user ? "Mon espace" : "Espace de gestion";
   const selfServiceHref = user ? "/accueil" : "/borne";
   const selfServiceLabel = user ? "Enregistrer une visite" : "Enregistrer ma visite";
-  const selfServiceAvailable = Boolean(user) || isSelfServiceGateConfigured();
+  const selfServiceAvailable = true;
   const mapHref =
     content.mapUrl ||
     `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(

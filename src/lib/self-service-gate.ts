@@ -1,39 +1,119 @@
-import { createHmac, randomBytes, createHash, timingSafeEqual } from "crypto";
+import { createHash, createHmac, randomBytes, timingSafeEqual } from "crypto";
 import { cookies } from "next/headers";
+import { and, eq } from "drizzle-orm";
+import { db } from "@/db";
+import { settings } from "@/db/schema";
 
 const COOKIE_NAME = "slp_self_service_gate";
+const CODE_SETTING = "self_service_gate_code";
+const SIGNING_KEY_SETTING = "self_service_gate_signing_key";
+const CODE_TTL_MS = 10 * 60 * 1000;
 const COOKIE_TTL_SECONDS = 20 * 60;
 const PURPOSE = "salam-library-self-service-v1";
+const CODE_LENGTH = 20;
 
-function configuredPassword(): string | null {
-  const password = process.env.SELF_SERVICE_GATE_PASSWORD;
-  return password && password.length >= 32 ? password : null;
+function normalizeCode(candidate: unknown): string | null {
+  if (typeof candidate !== "string" || candidate.length > 64) return null;
+  const code = candidate.replace(/[\s-]/g, "").toUpperCase();
+  return new RegExp(`^[A-F0-9]{${CODE_LENGTH}}$`).test(code) ? code : null;
 }
 
-export function isSelfServiceGateConfigured(): boolean {
-  return configuredPassword() !== null;
+function digest(value: string): Buffer {
+  return createHash("sha256").update(value).digest();
 }
 
-export function verifySelfServicePassword(candidate: unknown): boolean {
-  const configured = configuredPassword();
-  if (!configured || typeof candidate !== "string" || candidate.length > 256) return false;
-  const expected = createHash("sha256").update(configured).digest();
-  const received = createHash("sha256").update(candidate).digest();
-  return timingSafeEqual(expected, received);
+function formatCode(code: string): string {
+  return code.match(/.{1,4}/g)?.join("-") ?? code;
 }
 
-function signature(payload: string, password: string): string {
-  return createHmac("sha256", password).update(`${PURPOSE}:${payload}`).digest("hex");
+export async function generateSelfServiceGateCode(createdBy: number) {
+  const code = randomBytes(CODE_LENGTH / 2).toString("hex").toUpperCase();
+  const expiresAt = new Date(Date.now() + CODE_TTL_MS);
+  const value = JSON.stringify({
+    hash: digest(code).toString("hex"),
+    expiresAt: expiresAt.toISOString(),
+    createdBy,
+  });
+
+  await db
+    .insert(settings)
+    .values({ key: CODE_SETTING, value })
+    .onConflictDoUpdate({ target: settings.key, set: { value } });
+
+  return { code: formatCode(code), expiresAt };
+}
+
+export async function consumeSelfServiceGateCode(candidate: unknown): Promise<boolean> {
+  const code = normalizeCode(candidate);
+  if (!code) return false;
+
+  const [record] = await db.select().from(settings).where(eq(settings.key, CODE_SETTING)).limit(1);
+  if (!record) return false;
+
+  let parsed: { hash?: unknown; expiresAt?: unknown };
+  try {
+    parsed = JSON.parse(record.value) as { hash?: unknown; expiresAt?: unknown };
+  } catch {
+    return false;
+  }
+
+  if (
+    typeof parsed.hash !== "string" ||
+    !/^[a-f0-9]{64}$/.test(parsed.hash) ||
+    typeof parsed.expiresAt !== "string" ||
+    !Number.isFinite(Date.parse(parsed.expiresAt)) ||
+    Date.parse(parsed.expiresAt) <= Date.now()
+  ) {
+    return false;
+  }
+
+  const expectedHash = Buffer.from(parsed.hash, "hex");
+  const receivedHash = digest(code);
+  if (!timingSafeEqual(expectedHash, receivedHash)) return false;
+
+  // Suppression conditionnelle : un seul navigateur peut consommer le code.
+  const removed = await db
+    .delete(settings)
+    .where(and(eq(settings.key, CODE_SETTING), eq(settings.value, record.value)))
+    .returning({ key: settings.key });
+  return removed.length === 1;
+}
+
+async function getSigningKey(): Promise<Buffer> {
+  let [record] = await db
+    .select({ value: settings.value })
+    .from(settings)
+    .where(eq(settings.key, SIGNING_KEY_SETTING))
+    .limit(1);
+
+  if (!record) {
+    await db
+      .insert(settings)
+      .values({ key: SIGNING_KEY_SETTING, value: randomBytes(32).toString("hex") })
+      .onConflictDoNothing({ target: settings.key });
+    [record] = await db
+      .select({ value: settings.value })
+      .from(settings)
+      .where(eq(settings.key, SIGNING_KEY_SETTING))
+      .limit(1);
+  }
+
+  if (!record || !/^[a-f0-9]{64}$/.test(record.value)) {
+    throw new Error("La clé de session de la borne est indisponible.");
+  }
+  return Buffer.from(record.value, "hex");
+}
+
+function signature(payload: string, key: Buffer): string {
+  return createHmac("sha256", key).update(`${PURPOSE}:${payload}`).digest("hex");
 }
 
 export async function createSelfServiceGateSession(): Promise<void> {
-  const password = configuredPassword();
-  if (!password) throw new Error("SELF_SERVICE_GATE_PASSWORD is not configured.");
-
+  const key = await getSigningKey();
   const expiresAt = Math.floor(Date.now() / 1000) + COOKIE_TTL_SECONDS;
   const nonce = randomBytes(16).toString("hex");
   const payload = `${expiresAt}.${nonce}`;
-  const value = `${payload}.${signature(payload, password)}`;
+  const value = `${payload}.${signature(payload, key)}`;
   const store = await cookies();
   store.set(COOKIE_NAME, value, {
     httpOnly: true,
@@ -45,9 +125,6 @@ export async function createSelfServiceGateSession(): Promise<void> {
 }
 
 export async function hasSelfServiceGateSession(): Promise<boolean> {
-  const password = configuredPassword();
-  if (!password) return false;
-
   const store = await cookies();
   const value = store.get(COOKIE_NAME)?.value;
   if (!value) return false;
@@ -63,8 +140,9 @@ export async function hasSelfServiceGateSession(): Promise<boolean> {
   const now = Math.floor(Date.now() / 1000);
   if (expiresAt <= now || expiresAt > now + COOKIE_TTL_SECONDS + 30) return false;
 
+  const key = await getSigningKey();
   const payload = `${expiresAtText}.${nonce}`;
-  const expected = Buffer.from(signature(payload, password), "hex");
+  const expected = Buffer.from(signature(payload, key), "hex");
   const received = Buffer.from(receivedSignature, "hex");
   return timingSafeEqual(expected, received);
 }

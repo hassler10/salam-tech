@@ -6,7 +6,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { ensureSeed } from "@/lib/seed";
 import { getBranding } from "@/lib/branding";
 import { getLibraryClock, isLibraryOpen } from "@/lib/library-hours";
-import { hasSelfServiceGateSession, isSelfServiceGateConfigured } from "@/lib/self-service-gate";
+import { hasSelfServiceGateSession } from "@/lib/self-service-gate";
 import GateClient from "./GateClient";
 import KioskClient from "./KioskClient";
 
@@ -22,7 +22,6 @@ export default async function BornePage() {
   if (!gateOpen) {
     return (
       <GateClient
-        configured={isSelfServiceGateConfigured()}
         libraryName={branding.name}
         city={branding.city}
         logoUrl={branding.logoUrl}
