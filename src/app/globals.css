@@ -256,6 +256,41 @@
   }
 }
 
+/* La borne conserve une surface claire, même lorsque le navigateur est en thème sombre. */
+.kiosk .eyebrow {
+  color: var(--color-gold-700);
+}
+.kiosk .label {
+  color: #64748b;
+}
+.kiosk .input {
+  border-color: #e2e8f0;
+  background-color: #fff;
+  color: #1e293b;
+  box-shadow: inset 0 1px 1px rgb(15 23 42 / 0.02);
+}
+.kiosk .input::placeholder {
+  color: #94a3b8;
+}
+.kiosk .input:hover {
+  border-color: #cbd5e1;
+}
+.kiosk .input:focus {
+  border-color: var(--color-brand-500);
+  background-color: #fff;
+  box-shadow: 0 0 0 4px rgb(42 157 115 / 0.15);
+}
+.kiosk .btn-ghost {
+  border-color: #e2e8f0;
+  background-color: rgb(255 255 255 / 0.8);
+  color: #334155;
+}
+.kiosk .btn-ghost:hover {
+  border-color: var(--color-brand-300);
+  background-color: #fff;
+  color: var(--color-brand-800);
+}
+
 @keyframes fadeUp {
   from {
     opacity: 0;

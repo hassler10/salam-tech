@@ -9,6 +9,7 @@ import { ensureSeed } from "@/lib/seed";
 import { getPublicContent } from "@/lib/public-content";
 import { getBranding } from "@/lib/branding";
 import { durationLabel, durationParts } from "@/lib/subscriptions";
+import { isSelfServiceGateConfigured } from "@/lib/self-service-gate";
 import { Icon, type IconName } from "@/components/icons";
 
 export const dynamic = "force-dynamic";
@@ -84,6 +85,9 @@ export default async function Home() {
   const longest = Math.max(...formulas.map((f) => f.durationDays));
   const spaceHref = user ? (user.role === "agent" ? "/accueil" : "/dashboard") : "/login";
   const spaceLabel = user ? "Mon espace" : "Espace de gestion";
+  const selfServiceHref = user ? "/accueil" : "/borne";
+  const selfServiceLabel = user ? "Enregistrer une visite" : "Enregistrer ma visite";
+  const selfServiceAvailable = Boolean(user) || isSelfServiceGateConfigured();
   const mapHref =
     content.mapUrl ||
     `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
@@ -165,13 +169,23 @@ export default async function Home() {
                 Découvrir la bibliothèque
                 <Icon name="arrowRight" className="h-4 w-4" />
               </a>
-              <a
-                href="#acces"
-                className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/[0.06] px-5 text-[13px] font-semibold text-white/85 backdrop-blur transition hover:border-white/25 hover:bg-white/10 hover:text-white"
-              >
-                <Icon name="clock" className="h-4 w-4 text-gold-300" />
-                Horaires & accès
-              </a>
+              {selfServiceAvailable ? (
+                <Link
+                  href={selfServiceHref}
+                  className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/[0.06] px-5 text-[13px] font-semibold text-white/85 backdrop-blur transition hover:border-white/25 hover:bg-white/10 hover:text-white"
+                >
+                  <Icon name="ticket" className="h-4 w-4 text-gold-300" />
+                  {selfServiceLabel}
+                </Link>
+              ) : (
+                <a
+                  href="#acces"
+                  className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/[0.06] px-5 text-[13px] font-semibold text-white/85 backdrop-blur transition hover:border-white/25 hover:bg-white/10 hover:text-white"
+                >
+                  <Icon name="clock" className="h-4 w-4 text-gold-300" />
+                  Horaires & accès
+                </a>
+              )}
             </div>
 
           </div>
@@ -538,11 +552,18 @@ export default async function Home() {
                 Votre prochaine visite commence ici.
               </h2>
               <p className="mt-4 text-[13.5px] leading-7 text-white/60">
-                Abonnés ou visiteurs, présentez-vous à l&apos;accueil : l&apos;équipe enregistrera
-                votre passage et vous orientera vers les services de la bibliothèque.
+                {selfServiceAvailable
+                  ? "Abonnés et visiteurs peuvent enregistrer leur passage à l'accueil ou sur la borne après saisie du mot de passe fourni par l'équipe."
+                  : "Abonnés et visiteurs peuvent présenter leur carte ou leurs informations à l'accueil; l'équipe enregistrera leur passage."}
               </p>
             </div>
             <div className="flex flex-wrap gap-3">
+              {selfServiceAvailable && (
+                <Link href={selfServiceHref} className="btn-gold h-11 px-5 text-[13px]">
+                  <Icon name="ticket" className="h-4 w-4" />
+                  {selfServiceLabel}
+                </Link>
+              )}
               <Link
                 href={spaceHref}
                 className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/[0.06] px-5 text-[13px] font-semibold text-white/85 transition hover:border-white/30 hover:bg-white/10 hover:text-white"
