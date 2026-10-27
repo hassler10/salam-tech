@@ -47,7 +47,7 @@ const SERVICES: { icon: IconName; title: string; text: string }[] = [
   {
     icon: "users",
     title: "Accueil des visiteurs",
-    text: "Un enregistrement simple, à l'accueil ou sur la borne libre-service.",
+    text: "L'équipe enregistre les visiteurs et abonnés à l'accueil de la bibliothèque.",
   },
 ];
 
@@ -129,15 +129,6 @@ export default async function Home() {
           </nav>
 
           <div className="flex items-center gap-2">
-            {content.selfServiceEnabled && (
-              <Link
-                href="/borne"
-                className="hidden h-9 items-center gap-2 rounded-xl border border-white/15 bg-white/[0.06] px-3.5 text-[12px] font-semibold text-white/80 transition hover:border-white/25 hover:bg-white/10 hover:text-white md:inline-flex"
-              >
-                <Icon name="ticket" className="h-3.5 w-3.5 text-gold-300" />
-                Borne
-              </Link>
-            )}
             <Link
               href={spaceHref}
               className="inline-flex h-9 items-center gap-1.5 whitespace-nowrap rounded-xl bg-gradient-to-b from-gold-300 to-gold-500 px-3 text-[11.5px] font-semibold text-brand-950 shadow-[0_10px_24px_-14px_rgb(197_162_83/0.9)] ring-1 ring-inset ring-white/30 transition hover:from-gold-200 hover:to-gold-400 sm:gap-2 sm:px-4 sm:text-[12px]"
@@ -174,13 +165,13 @@ export default async function Home() {
                 Découvrir la bibliothèque
                 <Icon name="arrowRight" className="h-4 w-4" />
               </a>
-              <Link
-                href={content.selfServiceEnabled ? "/borne" : "#acces"}
+              <a
+                href="#acces"
                 className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/[0.06] px-5 text-[13px] font-semibold text-white/85 backdrop-blur transition hover:border-white/25 hover:bg-white/10 hover:text-white"
               >
-                <Icon name="ticket" className="h-4 w-4 text-gold-300" />
-                {content.selfServiceEnabled ? "Enregistrer ma visite" : "Voir les accès"}
-              </Link>
+                <Icon name="clock" className="h-4 w-4 text-gold-300" />
+                Horaires & accès
+              </a>
             </div>
 
           </div>
@@ -259,7 +250,7 @@ export default async function Home() {
             </span>
             <span className="min-w-0">
               <span className="block text-[9.5px] font-semibold uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">Accueil</span>
-              <span className="mt-0.5 block truncate text-[12px] font-semibold leading-5 text-slate-800 dark:text-slate-100">{content.selfServiceEnabled ? "Visiteurs et abonnés" : "Accueil sur place"}</span>
+              <span className="mt-0.5 block truncate text-[12px] font-semibold leading-5 text-slate-800 dark:text-slate-100">Accueil sur place</span>
             </span>
           </div>
         </div>
@@ -509,19 +500,6 @@ export default async function Home() {
                   </div>
                 </div>
 
-                {content.selfServiceEnabled && (
-                  <div className="flex gap-3">
-                    <Icon name="ticket" className="mt-0.5 h-4 w-4 shrink-0 text-gold-600 dark:text-gold-300" />
-                    <div>
-                      <p className="text-[12px] text-slate-500 dark:text-slate-400">
-                        Borne libre-service
-                      </p>
-                      <p className="mt-0.5 text-[12px] leading-6 text-slate-500 dark:text-slate-400">
-                        Enregistrez votre visite en quelques secondes, sans passer par l&apos;accueil.
-                      </p>
-                    </div>
-                  </div>
-                )}
               </div>
 
               <div className="mt-7 flex flex-wrap gap-2.5">
@@ -560,17 +538,11 @@ export default async function Home() {
                 Votre prochaine visite commence ici.
               </h2>
               <p className="mt-4 text-[13.5px] leading-7 text-white/60">
-                Abonnés ou visiteurs, enregistrez votre passage en quelques secondes et profitez
-                pleinement de la bibliothèque.
+                Abonnés ou visiteurs, présentez-vous à l&apos;accueil : l&apos;équipe enregistrera
+                votre passage et vous orientera vers les services de la bibliothèque.
               </p>
             </div>
             <div className="flex flex-wrap gap-3">
-              {content.selfServiceEnabled && (
-                <Link href="/borne" className="btn-gold h-11 px-5 text-[13px]">
-                  <Icon name="ticket" className="h-4 w-4" />
-                  Enregistrer ma visite
-                </Link>
-              )}
               <Link
                 href={spaceHref}
                 className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/[0.06] px-5 text-[13px] font-semibold text-white/85 transition hover:border-white/30 hover:bg-white/10 hover:text-white"
@@ -628,9 +600,6 @@ export default async function Home() {
                 Accès rapide
               </p>
               <ul className="mt-4 space-y-2.5 text-[12px] text-white/60">
-                {content.selfServiceEnabled && (
-                  <li><Link href="/borne" className="transition hover:text-white">Borne libre-service</Link></li>
-                )}
                 <li><Link href={spaceHref} className="transition hover:text-white">{spaceLabel}</Link></li>
                 <li>
                   <a href={mapHref} target="_blank" rel="noopener noreferrer" className="transition hover:text-white">

@@ -70,13 +70,6 @@ const SYSTEM_FIELDS: Field[] = [
     help: "Empêche l'enregistrement de deux visites identiques rapprochées.",
   },
   { key: "session_timeout_minutes", label: "Déconnexion automatique (minutes)", type: "number" },
-  {
-    key: "self_service_enabled",
-    label: "Borne d'auto-enregistrement (1 = activée, 0 = désactivée)",
-    type: "number",
-    help: "Page publique /borne : chaque personne enregistre sa propre visite sans voir les autres fiches.",
-    wide: true,
-  },
 ];
 
 const MAX_UPLOAD_BYTES = 12_000_000;
@@ -341,7 +334,7 @@ export default function SettingsClient({
         <div className="mb-5">
           <h2 className="section-title">Logo & image de couverture</h2>
           <p className="mt-1 text-[12px] leading-relaxed text-slate-500 dark:text-slate-400">
-            Ces visuels sont utilisés sur la vitrine, la connexion, la borne, les impressions et
+            Ces visuels sont utilisés sur la vitrine, la connexion, les impressions et
             l&apos;application installée.
           </p>
         </div>

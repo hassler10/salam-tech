@@ -21,7 +21,6 @@ export type Branding = {
   mapUrl: string;
   logoUrl: string;
   coverUrl: string;
-  selfServiceEnabled: boolean;
 };
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
@@ -65,7 +64,6 @@ export async function loadBranding(): Promise<Branding> {
     mapUrl: isHttpUrl(mapUrl) ? mapUrl : "",
     logoUrl: assetUrl("/api/branding/logo", media.library_logo, LOGO_FALLBACK),
     coverUrl: assetUrl("/api/branding/cover", media.library_cover, COVER_FALLBACK),
-    selfServiceEnabled: (text.self_service_enabled ?? "1") === "1",
   };
 }
 

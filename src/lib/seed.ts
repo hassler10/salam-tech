@@ -76,7 +76,6 @@ export async function ensureSeed() {
         { key: "alert_imminent_days", value: "3" },
         { key: "duplicate_window_minutes", value: "30" },
         { key: "session_timeout_minutes", value: "60" },
-        { key: "self_service_enabled", value: "1" },
         { key: "require_registered_card", value: "1" },
       ]);
     }

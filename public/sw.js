@@ -1,5 +1,5 @@
-const CACHE = "salam-library-v4";
-const SHELL = ["/", "/borne", "/offline", "/logo.png", "/manifest.webmanifest"];
+const CACHE = "salam-library-v5";
+const SHELL = ["/", "/offline", "/logo.png", "/manifest.webmanifest"];
 
 function isCacheableAsset(url) {
   return (

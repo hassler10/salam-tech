@@ -215,21 +215,6 @@ export default function Shell({
         </nav>
 
         <div className="relative px-4 pb-5">
-          <Link
-            href="/borne"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="group flex items-center gap-3 rounded-2xl border border-gold-400/25 bg-gradient-to-br from-gold-400/15 to-transparent p-3.5 transition hover:border-gold-400/50 hover:from-gold-400/20"
-          >
-            <span className="grid h-9 w-9 place-items-center rounded-xl bg-gold-400/15 text-gold-300">
-              <Icon name="ticket" className="h-[18px] w-[18px]" />
-            </span>
-            <span className="min-w-0 flex-1">
-              <span className="block text-[12.5px] font-semibold text-white">Borne publique</span>
-              <span className="block text-[10.5px] text-white/45">Enregistrement libre-service</span>
-            </span>
-            <Icon name="arrowRight" className="h-4 w-4 text-gold-300/70 transition group-hover:translate-x-0.5" />
-          </Link>
           <p className="mt-4 px-1 text-[10px] tracking-wide text-white/30">
             Version 1.0 · Aucun module financier
           </p>

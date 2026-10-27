@@ -7,7 +7,7 @@ import { useState } from "react";
 import { Icon } from "@/components/icons";
 
 const FEATURES = [
-  { icon: "ticket", title: "Borne libre-service", text: "Enregistrement autonome des visiteurs" },
+  { icon: "bell", title: "Accueil des visiteurs", text: "Enregistrement par l'équipe d'accueil" },
   { icon: "wifi", title: "Mode hors-ligne", text: "File d'attente locale et synchronisation" },
   { icon: "chart", title: "Statistiques en direct", text: "Fréquentation, motifs, abonnements" },
   { icon: "shield", title: "3 rôles sécurisés", text: "Admin, responsable et agent d'accueil" },
@@ -100,8 +100,8 @@ export default function LoginForm({ branding }: { branding: LoginBranding }) {
               <span className="text-gradient-gold">connectée</span> à ses lecteurs.
             </h1>
             <p className="mt-5 max-w-lg text-[13.5px] leading-7 text-white/65">
-              Abonnés, visiteurs, fréquentation et borne libre-service réunis dans une seule
-              plateforme — pensée pour le terrain, disponible même sans connexion.
+              Abonnés, visiteurs et fréquentation réunis dans une seule plateforme — pensée pour
+              l&apos;équipe d&apos;accueil, disponible même sans connexion.
             </p>
 
             <div className="mt-8 grid max-w-lg grid-cols-2 gap-3">
@@ -207,29 +207,6 @@ export default function LoginForm({ branding }: { branding: LoginBranding }) {
               </button>
             </form>
 
-            <div className="my-6 flex items-center gap-3">
-              <span className="h-px flex-1 bg-slate-200/80 dark:bg-white/10" />
-              <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">ou</span>
-              <span className="h-px flex-1 bg-slate-200/80 dark:bg-white/10" />
-            </div>
-
-            <a
-              href="/borne"
-              className="group flex items-center gap-3 rounded-2xl border border-gold-500/25 bg-gold-500/[0.06] p-3.5 transition hover:border-gold-500/45 hover:bg-gold-500/10"
-            >
-              <span className="grid h-9 w-9 place-items-center rounded-xl bg-gold-500/15 text-gold-700 dark:text-gold-300">
-                <Icon name="ticket" className="h-[18px] w-[18px]" />
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="block text-[12.5px] font-semibold text-slate-800 dark:text-slate-100">
-                  Borne d&apos;auto-enregistrement
-                </span>
-                <span className="block text-[10.5px] text-slate-500 dark:text-slate-400">
-                  Enregistrer une visite sans compte
-                </span>
-              </span>
-              <Icon name="arrowRight" className="h-4 w-4 text-gold-600 transition group-hover:translate-x-0.5" />
-            </a>
           </div>
 
           <p className="mt-6 text-center text-[10.5px] text-slate-400 dark:text-slate-500">

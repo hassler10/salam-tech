@@ -19,7 +19,6 @@ const OPERATION_DEFAULTS: Record<string, string> = {
   alert_imminent_days: "3",
   duplicate_window_minutes: "30",
   session_timeout_minutes: "60",
-  self_service_enabled: "1",
 };
 
 export default async function ParametresPage() {

@@ -25,8 +25,6 @@ const NUMBER_LIMITS: Record<string, [number, number]> = {
   session_timeout_minutes: [5, 10080],
 };
 
-const FLAGS = new Set(["self_service_enabled"]);
-
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const PHONE_RE = /^[0-9+().\s-]{0,40}$/;
 
@@ -86,10 +84,6 @@ export async function POST(req: Request) {
         return invalid(`« ${key} » doit être un nombre entier entre ${min} et ${max}.`);
       }
       clean[key] = String(value);
-    } else if (FLAGS.has(key)) {
-      if (raw === true || raw === "1") clean[key] = "1";
-      else if (raw === false || raw === "0") clean[key] = "0";
-      else return invalid(`Valeur invalide pour « ${key} » (0 ou 1 attendu).`);
     } else {
       return invalid(`Paramètre inconnu : « ${String(key).slice(0, 50)} ».`);
     }
