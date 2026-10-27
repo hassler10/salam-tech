@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { enqueueVisit, getCache, listQueue, syncQueue, type QueuedVisit } from "@/lib/offline";
 import { Icon } from "@/components/icons";
+import { getLibraryClock, getLibraryDayBounds, isLibraryOpen } from "@/lib/library-hours";
 
 type Person = { id: number; code: string; lastName: string; firstName: string };
 type RecentVisit = {
@@ -17,6 +18,14 @@ type RecentVisit = {
   syncStatus: string;
 };
 type OfflineCache = { subscribers: Person[]; visitors: Person[] };
+type ActivePresence = { visitId: number; displayName: string; personType: string; arrivedAt: string };
+
+function formatElapsed(arrivedAt: string, now: Date) {
+  const arrival = new Date(arrivedAt);
+  const end = isLibraryOpen(now) ? now : getLibraryDayBounds(getLibraryClock(arrival).day).closeAt;
+  const minutes = Math.max(0, Math.floor((end.getTime() - arrival.getTime()) / 60_000));
+  return `${Math.floor(minutes / 60)} h ${String(minutes % 60).padStart(2, "0")} min`;
+}
 
 export default function ReceptionClient({
   reasons,
@@ -42,6 +51,19 @@ export default function ReceptionClient({
   const [busy, setBusy] = useState(false);
   const [online, setOnline] = useState(true);
   const [pending, setPending] = useState<QueuedVisit[]>([]);
+  const [present, setPresent] = useState<ActivePresence[]>([]);
+  const [libraryOpen, setLibraryOpen] = useState(false);
+  const [clockNow, setClockNow] = useState<Date | null>(null);
+
+  const refreshPresence = async () => {
+    if (!navigator.onLine) return;
+    try {
+      const res = await fetch("/api/visits/presence", { cache: "no-store" });
+      if (res.ok) setPresent((await res.json()).data as ActivePresence[]);
+    } catch {
+      // L'accueil reste utilisable si la liste des sorties n'est pas joignable.
+    }
+  };
 
   useEffect(() => {
     setOnline(navigator.onLine);
@@ -50,9 +72,20 @@ export default function ReceptionClient({
     window.addEventListener("online", on);
     window.addEventListener("offline", off);
     listQueue().then(setPending);
+    const updateClock = () => {
+      const now = new Date();
+      setClockNow(now);
+      setLibraryOpen(isLibraryOpen(now));
+    };
+    updateClock();
+    const clockTimer = window.setInterval(updateClock, 15_000);
+    void refreshPresence();
+    const presenceTimer = window.setInterval(() => void refreshPresence(), 30_000);
     return () => {
       window.removeEventListener("online", on);
       window.removeEventListener("offline", off);
+      window.clearInterval(clockTimer);
+      window.clearInterval(presenceTimer);
     };
   }, []);
 
@@ -106,6 +139,10 @@ export default function ReceptionClient({
   };
 
   const submit = async () => {
+    if (!isLibraryOpen()) {
+      setMessage({ type: "err", text: "Les enregistrements sont ouverts de 08:00 à 16:00, heure d'Abidjan." });
+      return;
+    }
     setBusy(true);
     setMessage(null);
     const uid =
@@ -168,6 +205,7 @@ export default function ReceptionClient({
       } else {
         setMessage({ type: "ok", text: `Visite de ${displayName} enregistrée avec succès.` });
         reset();
+        void refreshPresence();
         router.refresh();
       }
     } catch {
@@ -177,6 +215,25 @@ export default function ReceptionClient({
       reset();
     }
     setBusy(false);
+  };
+
+  const checkout = async (visitId: number) => {
+    setBusy(true);
+    try {
+      const res = await fetch(`/api/visits/${visitId}/checkout`, { method: "POST" });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setMessage({ type: "err", text: json.error ?? "Sortie impossible." });
+      } else {
+        setMessage({ type: "ok", text: json.closedAtLibrary ? "Présence clôturée automatiquement à 16:00." : "Heure de sortie enregistrée." });
+        await refreshPresence();
+        router.refresh();
+      }
+    } catch {
+      setMessage({ type: "err", text: "Serveur injoignable : l'heure de sortie n'a pas été enregistrée." });
+    } finally {
+      setBusy(false);
+    }
   };
 
   const doSync = async () => {
@@ -200,7 +257,7 @@ export default function ReceptionClient({
                 Qui se présente aujourd&apos;hui ?
               </h2>
               <p className="mt-1.5 text-[12px] leading-relaxed text-slate-500 dark:text-slate-400">
-                Identifiez la personne, choisissez le motif, puis enregistrez son passage.
+                Ouvert de 08:00 à 16:00, heure d&apos;Abidjan. La sortie est enregistrée ici ou clôturée à 16:00.
               </p>
             </div>
             <span className="inline-flex items-center gap-2 rounded-full border border-brand-600/15 bg-brand-50/80 px-3 py-1.5 text-[10.5px] font-semibold text-brand-700 dark:border-brand-400/20 dark:bg-brand-400/10 dark:text-brand-200">
@@ -372,9 +429,12 @@ export default function ReceptionClient({
             )}
 
             <div className="flex flex-col gap-3 border-t border-slate-200/70 pt-4 sm:flex-row sm:items-center sm:justify-between dark:border-white/10">
-              <button type="button" onClick={submit} disabled={busy} className="btn-primary justify-center px-6 py-3 text-[13px]">
-                {busy ? "Enregistrement…" : "Valider l'enregistrement"}
+              <button type="button" onClick={submit} disabled={busy || !libraryOpen} className="btn-primary justify-center px-6 py-3 text-[13px] disabled:cursor-not-allowed disabled:opacity-50">
+                {busy ? "Enregistrement…" : libraryOpen ? "Valider l'enregistrement" : "Enregistrement fermé (08:00–16:00)"}
               </button>
+              <span className="text-xs text-slate-500" aria-live="polite">
+                {clockNow ? `Heure d'Abidjan : ${new Intl.DateTimeFormat("fr-FR", { timeZone: "Africa/Abidjan", hour: "2-digit", minute: "2-digit" }).format(clockNow)}` : "Vérification de l'horaire…"}
+              </span>
               <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-end">
                 <button type="button" onClick={reset} className="btn-ghost justify-center px-5 py-2.5">
                   Réinitialiser
@@ -409,6 +469,36 @@ export default function ReceptionClient({
             </ul>
           </div>
         )}
+        <div className="card mt-5">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <div>
+              <p className="eyebrow">Présence</p>
+              <h3 className="mt-1 text-sm font-bold">Personnes actuellement dans la bibliothèque</h3>
+            </div>
+            <span className="badge bg-brand-600/10 text-brand-800 dark:bg-brand-400/10 dark:text-brand-300">{present.length}</span>
+          </div>
+          {present.length === 0 ? (
+            <p className="text-sm text-slate-500">Aucune présence en cours.</p>
+          ) : (
+            <ul className="divide-y divide-slate-200/70 dark:divide-white/10">
+              {present.map((p) => (
+                <li key={p.visitId} className="flex flex-wrap items-center justify-between gap-3 py-3 first:pt-0 last:pb-0">
+                  <div>
+                    <p className="text-sm font-semibold">{p.displayName}</p>
+                    <p className="text-xs text-slate-500">
+                      {p.personType === "abonne" ? "Abonné" : "Visiteur"} · Arrivée {new Date(p.arrivedAt).toLocaleTimeString("fr-FR", { timeZone: "Africa/Abidjan", hour: "2-digit", minute: "2-digit" })}
+                      {clockNow ? ` · ${formatElapsed(p.arrivedAt, clockNow)}` : ""}
+                    </p>
+                  </div>
+                  <button type="button" className="btn-ghost px-3 py-1.5 text-xs" disabled={busy || !online} onClick={() => void checkout(p.visitId)}>
+                    Enregistrer la sortie
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+          <p className="mt-3 text-[11px] text-slate-500">Toute présence encore ouverte est clôturée automatiquement à 16:00.</p>
+        </div>
       </div>
 
       <div className={embedded ? "card h-fit max-h-80 overflow-y-auto" : "card h-fit"}>

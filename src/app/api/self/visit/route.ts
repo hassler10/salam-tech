@@ -1,13 +1,14 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { db } from "@/db";
-import { visits, visitReasons } from "@/db/schema";
+import { visits, visitReasons, visitPresence } from "@/db/schema";
 import { eq, and, gte } from "drizzle-orm";
 import { rateLimit, clientIp } from "@/lib/ratelimit";
 import { getSettingsMap } from "@/lib/seed";
 import { createVisitorRecord } from "@/lib/visitors";
-import { findSubscriberByIdentity } from "@/lib/identity";
+import { findMediaSalamSubscriberByIdentity } from "@/lib/identity";
 import { logAudit } from "@/lib/auth";
-import { refreshMediaSalamIfDue } from "@/lib/media-salam";
+import { isMediaSalamSyncFresh, refreshMediaSalamIfDue } from "@/lib/media-salam";
+import { ensurePresenceSchema, isLibraryOpen } from "@/lib/presence";
 
 export const maxDuration = 60;
 
@@ -27,6 +28,9 @@ export async function POST(req: Request) {
 
   const b = await req.json().catch(() => null);
   if (!b) return NextResponse.json({ error: "Requête invalide." }, { status: 400 });
+  if (!isLibraryOpen()) {
+    return NextResponse.json({ error: "Les enregistrements sont ouverts de 08:00 à 16:00 (heure d'Abidjan)." }, { status: 403 });
+  }
 
   const personType = b.personType === "abonne" ? "abonne" : "visiteur";
   const uid =
@@ -63,39 +67,17 @@ export async function POST(req: Request) {
     ) {
       return NextResponse.json({ error: "Identification impossible." }, { status: 400 });
     }
-    let s = await findSubscriberByIdentity(code, lastName, firstName);
-    const strict = (settings.require_registered_card ?? "0") === "1";
-    if (
-      !s ||
-      (strict &&
-        (!settings.media_salam_last_sync_at || s.source !== "media_salam" || s.status !== "actif"))
-    ) {
+    let s = await findMediaSalamSubscriberByIdentity(code, lastName, firstName);
+    if (!s || s.status !== "actif" || !isMediaSalamSyncFresh(settings)) {
       await refreshMediaSalamIfDue();
       settings = await getSettingsMap();
-      s = (await findSubscriberByIdentity(code, lastName, firstName)) ?? s;
+      s = await findMediaSalamSubscriberByIdentity(code, lastName, firstName);
+    }
+    if (!isMediaSalamSyncFresh(settings)) {
+      return NextResponse.json({ error: "Le registre officiel est indisponible ou trop ancien." }, { status: 503 });
     }
     if (!s) return NextResponse.json({ error: "Identification impossible." }, { status: 404 });
-    const strictNow = (settings.require_registered_card ?? "0") === "1";
-    if (strictNow) {
-      if (!settings.media_salam_last_sync_at) {
-        return NextResponse.json(
-          { error: "Le registre officiel n'est pas encore synchronisé." },
-          { status: 503 },
-        );
-      }
-      if (s.source !== "media_salam") {
-        return NextResponse.json(
-          { error: "Carte non reconnue par le registre officiel." },
-          { status: 403 },
-        );
-      }
-      if (s.status !== "actif") {
-        return NextResponse.json(
-          { error: "Carte inactive dans le registre officiel." },
-          { status: 403 },
-        );
-      }
-    }
+    if (s.status !== "actif") return NextResponse.json({ error: "Carte inactive dans le registre officiel." }, { status: 403 });
     subscriberId = s.id;
     displayName = `${s.lastName} ${s.firstName}`;
     firstNameForResponse = s.firstName;
@@ -134,24 +116,31 @@ export async function POST(req: Request) {
     );
   }
 
-  const [created] = await db
-    .insert(visits)
-    .values({
-      uid,
-      personType,
-      subscriberId,
-      visitorId,
-      displayName,
-      reason,
-      organization,
-      occurredAt: new Date(),
-      agentId: null,
-      agentName: AGENT_LABEL,
-      syncStatus: "synchronise",
-    })
-    .returning();
+  const arrivedAt = new Date();
+  await ensurePresenceSchema();
+  const created = await db.transaction(async (tx) => {
+    const [visit] = await tx
+      .insert(visits)
+      .values({
+        uid,
+        personType,
+        subscriberId,
+        visitorId,
+        displayName,
+        reason,
+        organization,
+        occurredAt: arrivedAt,
+        agentId: null,
+        agentName: AGENT_LABEL,
+        syncStatus: "synchronise",
+      })
+      .returning();
+    await tx.insert(visitPresence).values({ visitId: visit.id, arrivedAt });
+    return visit;
+  });
 
   await logAudit(null, "auto-enregistrement visite", "visite", created.id, displayName);
+  after(() => refreshMediaSalamIfDue());
 
   // Réponse minimale : aucune donnée d'une autre personne.
   return NextResponse.json({
@@ -169,6 +158,7 @@ export async function GET(req: Request) {
   return NextResponse.json({
     reasons: rows.map((r) => r.label),
     enabled: (settings.self_service_enabled ?? "1") === "1",
+    acceptingRegistrations: isLibraryOpen(),
     libraryName: settings.library_name ?? "Bibliothèque de la Mosquée Salam du Plateau",
   });
 }

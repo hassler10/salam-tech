@@ -48,7 +48,7 @@ const PUBLIC_FIELDS: Field[] = [
   {
     key: "opening_hours",
     label: "Horaires d'ouverture",
-    help: "Ex. : Lundi – Samedi · 09h00 – 18h00. Laisser vide affiche un renvoi vers l'accueil.",
+    help: "Horaires de présence appliqués aux enregistrements : 08:00–16:00, heure d'Abidjan.",
   },
   { key: "library_phone", label: "Téléphone / WhatsApp" },
   { key: "library_email", label: "Adresse e-mail" },

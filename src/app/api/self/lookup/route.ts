@@ -1,24 +1,27 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { db } from "@/db";
 import { subscriptionPeriods } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { rateLimit, clientIp } from "@/lib/ratelimit";
 import { getSettingsMap, getThresholds } from "@/lib/seed";
 import { computeStatus, STATUS_LABEL } from "@/lib/subscriptions";
-import { findSubscriberByIdentity } from "@/lib/identity";
-import { refreshMediaSalamIfDue } from "@/lib/media-salam";
+import { findMediaSalamSubscriberByIdentity } from "@/lib/identity";
+import { isMediaSalamSyncFresh, refreshMediaSalamIfDue } from "@/lib/media-salam";
+import { isLibraryOpen } from "@/lib/library-hours";
 
 export const maxDuration = 60;
 
 /**
- * Borne d'auto-identification d'un abonné.
- * Confidentialité : exige le numéro de carte ET les deux noms exacts, puis ne renvoie
- * que le prénom et l'état nécessaires à la confirmation de la visite.
+ * Borne d'auto-identification : la carte, le nom et les prénoms doivent correspondre
+ * à une fiche active récemment synchronisée depuis Media Salam.
  */
 export async function POST(req: Request) {
   let settings = await getSettingsMap();
   if ((settings.self_service_enabled ?? "1") !== "1") {
     return NextResponse.json({ error: "La borne est désactivée." }, { status: 403 });
+  }
+  if (!isLibraryOpen()) {
+    return NextResponse.json({ error: "La borne enregistre les arrivées de 08:00 à 16:00, heure d'Abidjan." }, { status: 403 });
   }
   if (!(await rateLimit(`lookup:${clientIp(req)}`, 12, 10 * 60 * 1000))) {
     return NextResponse.json(
@@ -44,25 +47,22 @@ export async function POST(req: Request) {
     );
   }
 
-  // Accepte le numéro de carte de la plateforme existante OU l'identifiant interne,
-  // mais toujours avec les deux noms de la carte.
-  let s = await findSubscriberByIdentity(code, lastName, firstName);
-  const strict = (settings.require_registered_card ?? "0") === "1";
-
-  // Carte inconnue ou refusée par le mode strict : on relit le registre officiel
-  // avant de répondre. Une fiche saisie dans media-salam est ainsi reconnue sans
-  // synchronisation manuelle ; la lecture est limitée à une tentative toutes les 30 s.
-  if (
-    !s ||
-    (strict &&
-      (!settings.media_salam_last_sync_at || s.source !== "media_salam" || s.status !== "actif"))
-  ) {
+  // Toute identification déclenche une actualisation en arrière-plan. Une fiche
+  // inconnue ou un registre périmé est actualisé avant la décision de la borne.
+  after(() => refreshMediaSalamIfDue());
+  let s = await findMediaSalamSubscriberByIdentity(code, lastName, firstName);
+  if (!s || s.status !== "actif" || !isMediaSalamSyncFresh(settings)) {
     await refreshMediaSalamIfDue();
     settings = await getSettingsMap();
-    s = (await findSubscriberByIdentity(code, lastName, firstName)) ?? s;
+    s = await findMediaSalamSubscriberByIdentity(code, lastName, firstName);
   }
 
-  // Message volontairement générique : empêche de deviner les identifiants existants.
+  if (!isMediaSalamSyncFresh(settings)) {
+    return NextResponse.json(
+      { error: "Le registre officiel est indisponible ou trop ancien. Adressez-vous à l'agent d'accueil." },
+      { status: 503 },
+    );
+  }
   if (!s) {
     return NextResponse.json(
       { error: "Identifiant ou nom incorrect. Adressez-vous à l'agent d'accueil." },
@@ -70,35 +70,11 @@ export async function POST(req: Request) {
     );
   }
 
-  const strictNow = (settings.require_registered_card ?? "0") === "1";
-  if (strictNow) {
-    if (!settings.media_salam_last_sync_at) {
-      return NextResponse.json(
-        {
-          error:
-            "Le registre officiel n'est pas encore synchronisé. Adressez-vous à l'agent d'accueil.",
-        },
-        { status: 503 },
-      );
-    }
-    if (s.source !== "media_salam") {
-      return NextResponse.json(
-        {
-          error:
-            "Cette carte ne figure pas dans le registre officiel. Adressez-vous à l'agent d'accueil.",
-        },
-        { status: 403 },
-      );
-    }
-    if (s.status !== "actif") {
-      return NextResponse.json(
-        {
-          error:
-            "Cette carte n'est plus active dans le registre officiel. Adressez-vous à l'agent d'accueil.",
-        },
-        { status: 403 },
-      );
-    }
+  if (s.status !== "actif") {
+    return NextResponse.json(
+      { error: "Cette carte n'est plus active dans le registre officiel. Adressez-vous à l'agent d'accueil." },
+      { status: 403 },
+    );
   }
 
   const periods = await db

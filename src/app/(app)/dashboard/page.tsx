@@ -223,6 +223,9 @@ export default async function DashboardPage() {
             </Link>
           }
         />
+        <p className="-mt-2 mb-4 text-xs text-slate-500 dark:text-slate-400">
+          Chaque graphique est accompagné d&apos;une interprétation automatique pour mettre en évidence les tendances et les chiffres importants.
+        </p>
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
           <DailyChart data={d.daily} />
           <MonthlyChart data={d.monthly} />

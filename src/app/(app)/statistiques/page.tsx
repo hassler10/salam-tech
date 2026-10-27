@@ -18,7 +18,7 @@ export default async function StatistiquesPage() {
   return (
     <div>
       <ReportHeader title="Statistiques générales de fréquentation" />
-      <PageHeader title="Statistiques générales" subtitle="Toutes les valeurs proviennent directement de la base de données.">
+      <PageHeader title="Statistiques générales" subtitle="Les encadrés sous les graphiques résument automatiquement les tendances, les pics et les répartitions affichés.">
         <PrintButton />
       </PageHeader>
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">

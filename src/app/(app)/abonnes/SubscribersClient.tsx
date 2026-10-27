@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { STATUS_LABEL, STATUS_COLOR, durationLabel, todayIso, type SubStatus } from "@/lib/subscriptions";
+import { STATUS_LABEL, STATUS_COLOR, type SubStatus } from "@/lib/subscriptions";
 
 type Sub = {
   id: number;
@@ -11,6 +11,7 @@ type Sub = {
   lastName: string;
   firstName: string;
   phone: string | null;
+  cardNumber?: string | null;
   registeredAt: string;
   typeName: string | null;
   startDate: string | null;
@@ -20,22 +21,18 @@ type Sub = {
   computed: SubStatus;
   daysLeft: number | null;
 };
-type Type = { id: number; name: string; durationDays: number };
-
 const PAGE_SIZE = 10;
 
-export default function SubscribersClient({ subs, types }: { subs: Sub[]; types: Type[] }) {
+export default function SubscribersClient({ subs }: { subs: Sub[] }) {
   const router = useRouter();
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("");
   const [page, setPage] = useState(1);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({
+    cardNumber: "",
     lastName: "",
     firstName: "",
-    phone: "",
-    typeId: types[0]?.id ?? 0,
-    startDate: todayIso(),
   });
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState(false);
@@ -70,11 +67,11 @@ export default function SubscribersClient({ subs, types }: { subs: Sub[]; types:
     const json = await res.json().catch(() => ({}));
     setBusy(false);
     if (!res.ok) {
-      setMsg(json.error ?? "Création impossible.");
+      setMsg(json.error ?? "Vérification impossible.");
       return;
     }
-    setMsg("Abonné créé avec succès.");
-    setForm({ lastName: "", firstName: "", phone: "", typeId: types[0]?.id ?? 0, startDate: todayIso() });
+    setMsg("Carte reconnue dans Media Salam et synchronisée.");
+    setForm({ cardNumber: "", lastName: "", firstName: "" });
     setShowForm(false);
     router.refresh();
   };
@@ -98,12 +95,16 @@ export default function SubscribersClient({ subs, types }: { subs: Sub[]; types:
           </select>
         </div>
         <button className="btn-primary" onClick={() => setShowForm((v) => !v)}>
-          {showForm ? "Fermer" : "+ Nouvel abonné"}
+          {showForm ? "Fermer" : "Vérifier une carte Media Salam"}
         </button>
       </div>
 
       {showForm && (
-        <form onSubmit={create} className="card grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <form onSubmit={create} className="card grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div>
+            <label className="label">Numéro de carte Media Salam *</label>
+            <input className="input" required value={form.cardNumber} onChange={(e) => setForm({ ...form, cardNumber: e.target.value })} />
+          </div>
           <div>
             <label className="label">Nom *</label>
             <input className="input" required value={form.lastName} onChange={(e) => setForm({ ...form, lastName: e.target.value })} />
@@ -112,26 +113,10 @@ export default function SubscribersClient({ subs, types }: { subs: Sub[]; types:
             <label className="label">Prénoms *</label>
             <input className="input" required value={form.firstName} onChange={(e) => setForm({ ...form, firstName: e.target.value })} />
           </div>
-          <div>
-            <label className="label">Téléphone (facultatif)</label>
-            <input className="input" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
-          </div>
-          <div>
-            <label className="label">Type d&apos;abonnement</label>
-            <select className="input" value={form.typeId} onChange={(e) => setForm({ ...form, typeId: Number(e.target.value) })}>
-              {types.map((t) => (
-                <option key={t.id} value={t.id}>{t.name} ({durationLabel(t.durationDays)})</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="label">Début de l&apos;abonnement</label>
-            <input type="date" className="input" value={form.startDate} onChange={(e) => setForm({ ...form, startDate: e.target.value })} />
-          </div>
           <div className="flex items-end">
-            <button className="btn-primary w-full" disabled={busy}>{busy ? "Création…" : "Enregistrer l'abonné"}</button>
+            <button className="btn-primary w-full" disabled={busy}>{busy ? "Vérification…" : "Vérifier et synchroniser"}</button>
           </div>
-          {msg && <p className="sm:col-span-3 text-sm font-medium text-[#166534]">{msg}</p>}
+          {msg && <p className="sm:col-span-2 text-sm font-medium text-[#166534]">{msg}</p>}
         </form>
       )}
 

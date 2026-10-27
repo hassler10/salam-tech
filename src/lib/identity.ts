@@ -46,3 +46,29 @@ export async function findSubscriberByIdentity(
     ) ?? null
   );
 }
+
+/** Vérifie exclusivement le numéro de carte et l'identité du registre Media Salam. */
+export async function findMediaSalamSubscriberByIdentity(
+  cardNumber: string,
+  lastName: string,
+  firstName: string,
+): Promise<IdentityMatch | null> {
+  const rows = await db
+    .select()
+    .from(subscribers)
+    .where(
+      sql`lower(${subscribers.cardNumber}) = lower(${cardNumber})
+          and ${subscribers.source} = 'media_salam'`,
+    )
+    .limit(5);
+
+  const expectedLast = normalizeIdentity(lastName);
+  const expectedFirst = normalizeIdentity(firstName);
+  return (
+    rows.find(
+      (row) =>
+        normalizeIdentity(row.lastName) === expectedLast &&
+        normalizeIdentity(row.firstName) === expectedFirst,
+    ) ?? null
+  );
+}

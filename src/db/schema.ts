@@ -140,6 +140,18 @@ export const visits = pgTable(
   ],
 );
 
+/** Heure d'arrivée et de départ pour chaque présence enregistrée. */
+export const visitPresence = pgTable(
+  "visit_presence",
+  {
+    visitId: integer("visit_id").primaryKey().references(() => visits.id, { onDelete: "cascade" }),
+    arrivedAt: timestamp("arrived_at", { withTimezone: true }).notNull(),
+    departedAt: timestamp("departed_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("visit_presence_departed_idx").on(t.departedAt)],
+);
+
 export const auditLogs = pgTable(
   "audit_logs",
   {

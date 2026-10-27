@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import { db } from "@/db";
-import { visits, visitors } from "@/db/schema";
-import { and, gte, lte, eq, desc } from "drizzle-orm";
+import { visits, visitors, visitPresence } from "@/db/schema";
+import { and, gte, lte, eq, desc, inArray } from "drizzle-orm";
 import { getCurrentUser, can } from "@/lib/auth";
 import { listSubscribers } from "@/lib/queries";
 import { STATUS_LABEL } from "@/lib/subscriptions";
+import { closeExpiredPresences, ensurePresenceSchema } from "@/lib/presence";
 
 const REPORT_TYPES = ["visites", "abonnes", "visiteurs", "motifs"] as const;
 type ReportType = (typeof REPORT_TYPES)[number];
@@ -65,6 +66,8 @@ export async function GET(req: Request) {
   let filename = "rapport.csv";
 
   if (type === "visites") {
+    await ensurePresenceSchema();
+    await closeExpiredPresences();
     const conds = [];
     if (fromDate) conds.push(gte(visits.occurredAt, fromDate));
     if (toDate) conds.push(lte(visits.occurredAt, new Date(toDate.getTime() + 86399999)));
@@ -74,15 +77,21 @@ export async function GET(req: Request) {
       .from(visits)
       .where(conds.length ? and(...conds) : undefined)
       .orderBy(desc(visits.occurredAt));
+    const presences = data.length
+      ? await db.select().from(visitPresence).where(inArray(visitPresence.visitId, data.map((visit) => visit.id)))
+      : [];
+    const departureByVisit = new Map(presences.map((presence) => [presence.visitId, presence.departedAt]));
     rows = [
-      ["Identifiant visite", "Type", "Nom et prénoms", "Motif", "Fonction", "Date et heure", "Agent", "Synchronisation"],
+      ["Identifiant visite", "Type", "Nom et prénoms", "Motif", "Fonction", "Arrivée", "Sortie", "Durée de présence (minutes)", "Agent", "Synchronisation"],
       ...data.map((v) => [
         v.uid,
         v.personType === "abonne" ? "Abonné" : "Visiteur",
         v.displayName,
         v.reason,
         v.organization,
-        new Date(v.occurredAt).toLocaleString("fr-FR"),
+        new Date(v.occurredAt).toLocaleString("fr-FR", { timeZone: "Africa/Abidjan" }),
+        departureByVisit.get(v.id)?.toLocaleString("fr-FR", { timeZone: "Africa/Abidjan" }) ?? null,
+        departureByVisit.get(v.id) ? Math.max(0, Math.floor((departureByVisit.get(v.id)!.getTime() - v.occurredAt.getTime()) / 60_000)) : null,
         v.agentName,
         v.syncStatus,
       ]),

@@ -1,9 +1,12 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { db } from "@/db";
 import { visitors } from "@/db/schema";
 import { or, ilike } from "drizzle-orm";
 import { getCurrentUser, can, logAudit } from "@/lib/auth";
 import { createVisitorRecord } from "@/lib/visitors";
+import { refreshMediaSalamIfDue } from "@/lib/media-salam";
+
+export const maxDuration = 60;
 
 function optionalString(value: unknown, max: number): string | null | undefined {
   if (value === undefined || value === null || value === "") return null;
@@ -57,6 +60,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Contact ou fonction invalide." }, { status: 400 });
   }
   const v = await createVisitorRecord({ lastName, firstName, phone, organization });
+  // Synchronise le registre des abonnés en arrière-plan. Les coordonnées des
+  // visiteurs restent exclusivement dans Salam Library.
+  after(() => refreshMediaSalamIfDue());
   await logAudit(user, "création visiteur", "visiteur", v.id, `${lastName} ${firstName}`);
   return NextResponse.json({ data: v });
 }

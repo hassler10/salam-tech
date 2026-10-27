@@ -77,7 +77,7 @@ export async function ensureSeed() {
         { key: "duplicate_window_minutes", value: "30" },
         { key: "session_timeout_minutes", value: "60" },
         { key: "self_service_enabled", value: "1" },
-        { key: "require_registered_card", value: "0" },
+        { key: "require_registered_card", value: "1" },
       ]);
     }
     await db
@@ -88,8 +88,8 @@ export async function ensureSeed() {
       .onConflictDoNothing();
     await db
       .insert(settings)
-      .values({ key: "require_registered_card", value: "0" })
-      .onConflictDoNothing();
+      .values({ key: "require_registered_card", value: "1" })
+      .onConflictDoUpdate({ target: settings.key, set: { value: "1" } });
     done = true;
   } catch {
     // la base n'est peut-être pas encore prête

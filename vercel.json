@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/media-salam",
       "schedule": "0 2 * * *"
+    },
+    {
+      "path": "/api/cron/close-visits",
+      "schedule": "0 16 * * *"
     }
   ]
 }

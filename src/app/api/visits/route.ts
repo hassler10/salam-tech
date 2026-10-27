@@ -1,10 +1,12 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { db } from "@/db";
-import { visits, subscribers, visitors } from "@/db/schema";
+import { visits, subscribers, visitors, visitPresence } from "@/db/schema";
 import { eq, and, gte, desc } from "drizzle-orm";
 import { getCurrentUser, can, logAudit } from "@/lib/auth";
 import { createVisitorRecord } from "@/lib/visitors";
 import { getSettingsMap } from "@/lib/seed";
+import { isMediaSalamSyncFresh, refreshMediaSalamIfDue } from "@/lib/media-salam";
+import { ensurePresenceSchema, resolveArrivalTime } from "@/lib/presence";
 
 type Payload = {
   uid?: string;
@@ -26,6 +28,8 @@ const MAX_NAME_LENGTH = 120;
 const MAX_ORGANIZATION_LENGTH = 140;
 const MAX_PHONE_LENGTH = 40;
 const MAX_REASON_LENGTH = 120;
+
+export const maxDuration = 60;
 
 function text(value: unknown, max: number): string {
   return typeof value === "string" ? value.trim().slice(0, max) : "";
@@ -57,12 +61,10 @@ async function register(p: Payload, user: { id: number; fullName: string } | nul
     return { status: "error" as const, uid, message: "Type de personne invalide." };
   }
 
-  const occurredAt = p.occurredAt ? new Date(p.occurredAt) : new Date();
-  if (Number.isNaN(occurredAt.getTime())) {
-    return { status: "error" as const, uid, message: "Date de visite invalide." };
-  }
+  const { arrivedAt, error: arrivalError } = resolveArrivalTime(p.occurredAt, p.offline === true);
+  if (!arrivedAt) return { status: "error" as const, uid, message: arrivalError ?? "Enregistrement hors horaires." };
 
-  const settings = await getSettingsMap();
+  let settings = await getSettingsMap();
   const windowMin = clampWindow(settings.duplicate_window_minutes);
 
   let subscriberId: number | null = null;
@@ -74,8 +76,15 @@ async function register(p: Payload, user: { id: number; fullName: string } | nul
     if (!isPositiveId(p.subscriberId)) {
       return { status: "error" as const, uid, message: "Abonné introuvable." };
     }
-    const s = await db.select().from(subscribers).where(eq(subscribers.id, p.subscriberId)).limit(1);
+    let s = await db.select().from(subscribers).where(eq(subscribers.id, p.subscriberId)).limit(1);
+    if (!s[0] || s[0].source !== "media_salam" || s[0].status !== "actif" || !isMediaSalamSyncFresh(settings)) {
+      await refreshMediaSalamIfDue();
+      settings = await getSettingsMap();
+      s = await db.select().from(subscribers).where(eq(subscribers.id, p.subscriberId)).limit(1);
+    }
     if (!s[0]) return { status: "error" as const, uid, message: "Abonné introuvable." };
+    if (!isMediaSalamSyncFresh(settings)) return { status: "error" as const, uid, message: "Registre officiel indisponible. Réessayez plus tard." };
+    if (s[0].source !== "media_salam" || s[0].status !== "actif") return { status: "error" as const, uid, message: "Abonné non reconnu ou inactif dans Media Salam." };
     subscriberId = s[0].id;
     displayName = `${s[0].lastName} ${s[0].firstName}`;
     organization = null;
@@ -108,7 +117,7 @@ async function register(p: Payload, user: { id: number; fullName: string } | nul
   }
 
   // anti double-enregistrement accidentel
-  const since = new Date(occurredAt.getTime() - windowMin * 60000);
+  const since = new Date(arrivedAt.getTime() - windowMin * 60000);
   const conds = [gte(visits.occurredAt, since)];
   if (subscriberId) conds.push(eq(visits.subscriberId, subscriberId));
   else if (visitorId) conds.push(eq(visits.visitorId, visitorId));
@@ -123,22 +132,28 @@ async function register(p: Payload, user: { id: number; fullName: string } | nul
     };
   }
 
-  const [created] = await db
-    .insert(visits)
-    .values({
-      uid,
-      personType: p.personType,
-      subscriberId,
-      visitorId,
-      displayName,
-      reason: optionalText(p.reason, MAX_REASON_LENGTH),
-      organization,
-      occurredAt,
-      agentId: user?.id ?? null,
-      agentName: user?.fullName ?? "inconnu",
-      syncStatus: p.offline ? "synchronise_differe" : "synchronise",
-    })
-    .returning();
+  await ensurePresenceSchema();
+  const created = await db.transaction(async (tx) => {
+    const [visit] = await tx
+      .insert(visits)
+      .values({
+        uid,
+        personType: p.personType,
+        subscriberId,
+        visitorId,
+        displayName,
+        reason: optionalText(p.reason, MAX_REASON_LENGTH),
+        organization,
+        occurredAt: arrivedAt,
+        agentId: user?.id ?? null,
+        agentName: user?.fullName ?? "inconnu",
+        syncStatus: p.offline ? "synchronise_differe" : "synchronise",
+      })
+      .returning();
+    await tx.insert(visitPresence).values({ visitId: visit.id, arrivedAt });
+    return visit;
+  });
+  after(() => refreshMediaSalamIfDue());
   return { status: "created" as const, uid, id: created.id, visit: created };
 }
 
@@ -163,7 +178,6 @@ export async function POST(req: Request) {
   if (!body || typeof body !== "object") {
     return NextResponse.json({ error: "Requête invalide." }, { status: 400 });
   }
-
   if (Array.isArray(body.batch)) {
     if (body.batch.length > MAX_BATCH) {
       return NextResponse.json(

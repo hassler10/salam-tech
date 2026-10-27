@@ -15,6 +15,7 @@ const BACKUP_PATH = "/api/backup";
 const MAX_SUBSCRIBERS = 50_000;
 const SYNC_LOCK_KEY = 812746321;
 const AUTO_SYNC_COOLDOWN_MS = 30_000;
+const MAX_SYNC_AGE_MS = 5 * 60_000;
 
 export class MediaSalamError extends Error {
   status: number;
@@ -53,6 +54,9 @@ export type MediaSalamState = {
   status: "ok" | "error" | null;
   summary: SyncCounts | null;
   error: string | null;
+  webhookAt: string | null;
+  webhookStatus: "ok" | "error" | null;
+  webhookError: string | null;
 };
 
 type NormalizedRow = {
@@ -78,7 +82,8 @@ export function getMediaSalamConfig() {
   const url = (process.env.MEDIA_SALAM_URL?.trim() || DEFAULT_URL).replace(/\/+$/, "");
   const username = process.env.MEDIA_SALAM_USERNAME?.trim() ?? "";
   const password = process.env.MEDIA_SALAM_PASSWORD ?? "";
-  return { url, username, configured: Boolean(username && password) };
+  const webhookSecret = process.env.MEDIA_SALAM_WEBHOOK_SECRET ?? "";
+  return { url, username, configured: Boolean(username && password), webhookConfigured: webhookSecret.length >= 32 };
 }
 
 function assertUpstreamUrl(url: string): string {
@@ -384,7 +389,7 @@ export async function previewMediaSalam(payload: unknown): Promise<SyncPreview> 
  */
 export async function syncMediaSalam(
   payload: unknown,
-  options: { mode: "manuel" | "auto" },
+  options: { mode: "manuel" | "auto" | "webhook"; fullSnapshot?: boolean },
 ): Promise<{ counts: SyncCounts; generatedAt: string | null; lastSync: string }> {
   const normalized = normalizeBackup(payload);
   if (normalized.rows.length === 0) {
@@ -555,26 +560,35 @@ export async function syncMediaSalam(
       }
     }
 
-    // Une fiche autrefois synchronisée puis disparue du registre est suspendue, jamais effacée.
-    for (const row of existing) {
-      if (row.source !== MEDIA_SALAM_SOURCE || !row.externalRef) continue;
-      if (seenRefs.has(row.externalRef) || row.status === "suspendu") continue;
-      await tx
-        .update(subscribers)
-        .set({ status: "suspendu", updatedAt: now })
-        .where(eq(subscribers.id, row.id));
-      counts.suspendus += 1;
-      counts.majs += 1;
+    // Les notifications webhook ne contiennent qu'une fiche. Seul un registre
+    // complet peut suspendre les fiches qui en sont absentes.
+    if (options.fullSnapshot !== false) {
+      // Une fiche absente du registre est suspendue, jamais effacée.
+      for (const row of existing) {
+        if (row.source !== MEDIA_SALAM_SOURCE || !row.externalRef) continue;
+        if (seenRefs.has(row.externalRef) || row.status === "suspendu") continue;
+        await tx
+          .update(subscribers)
+          .set({ status: "suspendu", updatedAt: now })
+          .where(eq(subscribers.id, row.id));
+        counts.suspendus += 1;
+        counts.majs += 1;
+      }
     }
 
-    const state: [string, string][] = [
-      ["media_salam_last_attempt_at", now.toISOString()],
-      ["media_salam_last_sync_at", now.toISOString()],
-      ["media_salam_last_sync_status", "ok"],
-      ["media_salam_last_sync_summary", JSON.stringify(counts)],
-      ["media_salam_last_sync_error", ""],
-      ["media_salam_last_sync_mode", options.mode],
-    ];
+    const state: [string, string][] = options.fullSnapshot === false
+      ? [
+          ["media_salam_last_webhook_at", now.toISOString()],
+          ["media_salam_last_webhook_summary", JSON.stringify(counts)],
+        ]
+      : [
+          ["media_salam_last_attempt_at", now.toISOString()],
+          ["media_salam_last_sync_at", now.toISOString()],
+          ["media_salam_last_sync_status", "ok"],
+          ["media_salam_last_sync_summary", JSON.stringify(counts)],
+          ["media_salam_last_sync_error", ""],
+          ["media_salam_last_sync_mode", options.mode],
+        ];
     for (const [key, value] of state) {
       await tx
         .insert(settings)
@@ -611,6 +625,12 @@ export async function recordMediaSalamFailure(message: string): Promise<void> {
 }
 
 export type AutoSyncResult = "synced" | "skipped" | "failed";
+
+export function isMediaSalamSyncFresh(map: Record<string, string>, now = Date.now()): boolean {
+  const syncedAt = Date.parse(map.media_salam_last_sync_at ?? "");
+  const age = now - syncedAt;
+  return map.media_salam_last_sync_status === "ok" && Number.isFinite(syncedAt) && age >= 0 && age <= MAX_SYNC_AGE_MS;
+}
 
 let autoSyncInFlight: Promise<AutoSyncResult> | null = null;
 
@@ -684,5 +704,10 @@ export function readMediaSalamState(map: Record<string, string>): MediaSalamStat
     status: rawStatus === "ok" || rawStatus === "error" ? rawStatus : null,
     summary,
     error: map.media_salam_last_sync_error ? map.media_salam_last_sync_error : null,
+    webhookAt: map.media_salam_last_webhook_at ?? null,
+    webhookStatus: map.media_salam_last_webhook_status === "ok" || map.media_salam_last_webhook_status === "error"
+      ? map.media_salam_last_webhook_status
+      : null,
+    webhookError: map.media_salam_last_webhook_error ? map.media_salam_last_webhook_error : null,
   };
 }

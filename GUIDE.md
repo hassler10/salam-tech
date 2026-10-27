@@ -79,6 +79,12 @@ Les débordements de calendrier (31 janvier + 1 mois) sont ramenés au dernier j
 Limitation signalée : la synchronisation s'effectue à l'ouverture de l'application ou au
 retour de la connexion (pas de Background Sync natif).
 
+Les créations, modifications et mises à la corbeille dans Media Salam peuvent aussi déclencher
+une notification webhook signée vers Salam Library. Elle synchronise seulement la fiche concernée;
+les imports groupés et les purges demandent une synchronisation complète. Cette fonction nécessite
+`MEDIA_SALAM_WEBHOOK_SECRET` côté Salam Library et le même secret dans `SALAM_LIBRARY_WEBHOOK_SECRET`
+côté Media Salam. La synchronisation planifiée demeure le mécanisme de secours.
+
 ## 6. Sécurité
 
 - Mots de passe hachés (scrypt + sel), sessions en base avec expiration (12 h).
@@ -87,11 +93,30 @@ retour de la connexion (pas de Background Sync natif).
 - Journal d'audit des opérations sensibles.
 - Collecte minimale de données personnelles (nom, prénoms, contact facultatif).
 
+### Comptes et accès institutionnels
+
+Les comptes Vercel, Neon et GitHub qui contrôlent la production doivent appartenir à l'institution,
+avec au moins deux responsables désignés et des droits limités selon les fonctions. Activer la
+double authentification sur ces comptes fournisseurs lorsqu'elle est disponible; ne pas partager
+les mots de passe ni les jetons personnels. Cette mesure protège les consoles d'hébergement et le
+code; elle n'ajoute pas une double authentification aux comptes de Salam Library eux-mêmes.
+
 ### Sauvegarde / restauration
 
+Pour la base de production Neon, activer les snapshots automatiques quotidiens dans le projet
+Neon (**Backup & Restore / Snapshots**). Vérifier la disponibilité et le coût selon le forfait
+choisi. Une fois par trimestre, restaurer un snapshot dans une branche séparée et vérifier que
+l'application peut se connecter avant de définir une procédure de bascule. Ne pas restaurer
+directement sur la branche de production sans validation de l'administrateur.
+
+Cette protection doit être configurée séparément pour chaque base de production (Salam Library
+et Media Salam si elles sont dans deux projets Neon). Les snapshots dans Neon ne remplacent pas
+une copie chiffrée indépendante si l'administration exige une sauvegarde hors fournisseur.
+
 ```bash
-pg_dump "$DATABASE_URL" > sauvegarde_$(date +%F).sql     # sauvegarde
-psql "$DATABASE_URL" < sauvegarde_2026-01-01.sql         # restauration
+pg_dump --format=custom --no-owner "$DATABASE_URL" --file="sauvegarde_$(date +%F).dump"
+# Restaurer uniquement dans une base ou branche de récupération isolée :
+pg_restore --no-owner --dbname="$DATABASE_URL_RECUPERATION" sauvegarde_2026-01-01.dump
 ```
 
 ## 7. Base de données

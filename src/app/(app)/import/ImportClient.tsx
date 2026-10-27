@@ -44,17 +44,17 @@ function CountTile({
 }
 
 export default function ImportClient({
-  strict,
   imported,
   synced,
   autoConfigured,
+  webhookConfigured,
   upstreamUrl,
   state,
 }: {
-  strict: boolean;
   imported: number;
   synced: number;
   autoConfigured: boolean;
+  webhookConfigured: boolean;
   upstreamUrl: string;
   state: MediaSalamState;
 }) {
@@ -179,15 +179,6 @@ export default function ImportClient({
     }
   };
 
-  const setStrict = async (value: boolean) => {
-    await fetch("/api/settings", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ require_registered_card: value ? "1" : "0" }),
-    });
-    router.refresh();
-  };
-
   const syncBusyLabel =
     syncBusy === "preview" ? "Vérification…" : syncBusy === "apply" ? "Synchronisation…" : "";
 
@@ -199,8 +190,8 @@ export default function ImportClient({
             <h3 className="text-sm font-bold">1. Registre officiel media-salam</h3>
             <p className="mt-1 text-xs text-slate-500">
               Salam Library Pro ne modifie jamais media-salam : il lit uniquement la sauvegarde
-              officielle. Les noms, prénoms et numéros de carte de la borne proviennent de cette
-              synchronisation, déclenchée automatiquement à chaque identification à la borne.
+              officielle. Chaque saisie d’abonné ou visiteur déclenche une actualisation automatique
+              du registre; les données personnelles des visiteurs ne sont pas transmises.
             </p>
           </div>
           <span
@@ -220,7 +211,7 @@ export default function ImportClient({
           </span>
         </div>
 
-        <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <div className="rounded-xl bg-slate-50 p-3 dark:bg-slate-800">
             <p className="text-[11px] uppercase tracking-wide text-slate-400">Dernière synchronisation</p>
             <p className="mt-1 text-sm font-semibold">{formatDateTime(state.lastSync)}</p>
@@ -235,11 +226,32 @@ export default function ImportClient({
               {autoConfigured ? "Borne + quotidienne (02:00 UTC)" : "Non configurée"}
             </p>
           </div>
+          <div className="rounded-xl bg-slate-50 p-3 dark:bg-slate-800">
+            <p className="text-[11px] uppercase tracking-wide text-slate-400">Webhook Media Salam</p>
+            <p className="mt-1 text-sm font-semibold">
+              {!webhookConfigured
+                ? "Secret à configurer"
+                : state.webhookStatus === "ok"
+                  ? "Actif · notification reçue"
+                  : state.webhookStatus === "error"
+                    ? "Dernière notification en erreur"
+                    : "Actif · en attente d’un événement"}
+            </p>
+            {state.webhookAt && (
+              <p className="mt-1 text-[10px] text-slate-500">Reçu le {formatDateTime(state.webhookAt)}</p>
+            )}
+          </div>
         </div>
 
         {state.status === "error" && state.error && (
           <p className="mt-3 rounded-xl bg-rose-50 px-3 py-2 text-xs font-medium text-rose-700">
             {state.error}
+          </p>
+        )}
+
+        {state.webhookStatus === "error" && state.webhookError && (
+          <p className="mt-3 rounded-xl bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800">
+            Webhook : {state.webhookError}
           </p>
         )}
 
@@ -375,30 +387,20 @@ export default function ImportClient({
       </div>
 
       <div className="card">
-        <h3 className="mb-2 text-sm font-bold">2. Mode strict de la borne</h3>
+        <h3 className="mb-2 text-sm font-bold">2. Vérification obligatoire des abonnés</h3>
         <p className="mb-3 text-xs text-slate-500">
-          Lorsqu&apos;il est activé, la borne <strong>n&apos;accepte que les abonnés actifs issus
-          de la synchronisation media-salam</strong>. Toute autre carte est refusée et renvoyée
-          vers l&apos;agent d&apos;accueil. Les visiteurs occasionnels restent libres de
-          s&apos;enregistrer.
-          Actuellement <strong>{synced}</strong> abonné(s) synchronisé(s) depuis media-salam.
+          L’identifiant, le nom et les prénoms doivent correspondre à une carte active de Media Salam.
+          Les abonnements journaliers, hebdomadaires et annuels conservent leurs dates de validité.
+          Les visiteurs occasionnels restent enregistrés uniquement dans Salam Library. Il y a actuellement
+          <strong> {synced}</strong> abonné(s) synchronisé(s).
         </p>
-        <label className="flex items-center gap-3 rounded-xl bg-slate-50 p-3 dark:bg-slate-800">
-          <input type="checkbox" checked={strict} onChange={(e) => setStrict(e.target.checked)} />
-          <span className="text-sm font-semibold">
-            N&apos;accepter que les abonnés du registre officiel media-salam
-            <span className={`badge ml-2 ${strict ? "bg-emerald-100 text-emerald-800" : "bg-slate-200 text-slate-600"}`}>
-              {strict ? "Activé" : "Désactivé"}
-            </span>
-          </span>
-        </label>
-        {strict && synced === 0 && (
+        <div className="rounded-xl bg-emerald-50 p-3 text-sm font-semibold text-emerald-800">Contrôle actif en permanence</div>
+        {synced === 0 && (
           <p className="mt-2 rounded-xl bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800">
-            Attention : aucun abonné synchronisé. Avec le mode strict activé, la borne refusera
-            tous les abonnés. Synchronisez d&apos;abord le registre.
+            Aucun abonné synchronisé. Configurez l’accès Media Salam puis lancez une synchronisation.
           </p>
         )}
-        {strict && synced > 0 && !state.lastSync && (
+        {synced > 0 && !state.lastSync && (
           <p className="mt-2 rounded-xl bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800">
             Aucune synchronisation réussie n&apos;est enregistrée : la borne refusera les cartes
             jusqu&apos;à la prochaine synchronisation.
@@ -410,7 +412,7 @@ export default function ImportClient({
         <h3 className="mb-2 text-sm font-bold">3. Import CSV de secours</h3>
         <p className="mb-3 text-xs text-slate-500">
           Disponible pour reprendre un ancien fichier, mais il ne vaut pas registre officiel :
-          les fiches importées en CSV ne sont pas acceptées par le mode strict.
+          les fiches importées en CSV ne sont pas reconnues comme abonnés Media Salam.
           {imported > 0 ? ` ${imported} fiche(s) proviennent d'un ancien import CSV.` : ""}
         </p>
         <input

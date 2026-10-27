@@ -109,7 +109,7 @@ export async function syncQueue(): Promise<SyncReport> {
       const res = await fetch("/api/visits", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ batch: chunk }),
+        body: JSON.stringify({ batch: chunk.map((item) => ({ ...item, offline: true })) }),
       });
       if (!res.ok) {
         report.failed += chunk.length;

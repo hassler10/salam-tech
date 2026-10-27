@@ -25,7 +25,7 @@ const NUMBER_LIMITS: Record<string, [number, number]> = {
   session_timeout_minutes: [5, 10080],
 };
 
-const FLAGS = new Set(["self_service_enabled", "require_registered_card"]);
+const FLAGS = new Set(["self_service_enabled"]);
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const PHONE_RE = /^[0-9+().\s-]{0,40}$/;

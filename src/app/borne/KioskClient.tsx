@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useEffect, useState, useCallback } from "react";
 import { Icon } from "@/components/icons";
+import { getLibraryClock, isLibraryOpen } from "@/lib/library-hours";
 
 type Me = {
   status: string;
@@ -82,6 +83,8 @@ function Frame({
 
 export default function KioskClient({
   enabled,
+  openNow,
+  initialTime,
   reasons,
   libraryName,
   city,
@@ -89,6 +92,8 @@ export default function KioskClient({
   coverUrl,
 }: {
   enabled: boolean;
+  openNow: boolean;
+  initialTime: string;
   reasons: string[];
   libraryName: string;
   city: string;
@@ -105,6 +110,20 @@ export default function KioskClient({
   const [error, setError] = useState("");
   const [done, setDone] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [libraryOpen, setLibraryOpen] = useState(openNow);
+  const [libraryTime, setLibraryTime] = useState(initialTime);
+
+  useEffect(() => {
+    const update = () => {
+      const now = new Date();
+      setLibraryOpen(isLibraryOpen(now));
+      const { hour, minute } = getLibraryClock(now);
+      setLibraryTime(`${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`);
+    };
+    update();
+    const timer = window.setInterval(update, 15_000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   const reset = useCallback(() => {
     setMode("choix");
@@ -192,6 +211,22 @@ export default function KioskClient({
             La borne d&apos;auto-enregistrement est actuellement désactivée.
             Veuillez vous adresser à l&apos;agent d&apos;accueil.
           </p>
+        </div>
+      </Frame>
+    );
+  }
+
+  if (!libraryOpen) {
+    return (
+      <Frame libraryName={libraryName} city={city} logoUrl={logoUrl} coverUrl={coverUrl}>
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-8 text-center">
+          <span className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-amber-100 text-amber-800">
+            <Icon name="clock" className="h-6 w-6" />
+          </span>
+          <p className="mt-4 text-lg font-semibold text-brand-900">Enregistrement fermé</p>
+          <p className="mt-2 text-sm text-slate-600">La bibliothèque accueille les abonnés et visiteurs de 08:00 à 16:00, heure d&apos;Abidjan.</p>
+          <p className="mt-2 text-xs text-slate-500">Heure actuelle : {libraryTime || "…"}</p>
+          <p className="mt-3 text-xs text-slate-500">Veuillez vous adresser à l&apos;accueil pendant les heures d&apos;ouverture.</p>
         </div>
       </Frame>
     );

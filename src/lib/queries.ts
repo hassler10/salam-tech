@@ -25,7 +25,7 @@ export type SubscriberRow = {
 export async function listSubscribers(): Promise<SubscriberRow[]> {
   const th = await getThresholds();
   const rows = await db.execute(sql`
-    select s.id, s.code, s.last_name, s.first_name, s.phone, s.registered_at, s.status,
+    select s.id, s.code, s.last_name, s.first_name, s.phone, s.registered_at, s.status, s.source,
       p.type_name, p.start_date, p.end_date, p.duration_days,
       coalesce(v.cnt, 0) as visit_count, v.last_visit
     from subscribers s
@@ -38,10 +38,18 @@ export async function listSubscribers(): Promise<SubscriberRow[]> {
       select count(*)::int as cnt, max(occurred_at) as last_visit
       from visits vi where vi.subscriber_id = s.id
     ) v on true
+    where s.source = 'media_salam'
     order by s.last_name asc, s.first_name asc
   `);
   return (rows.rows as Record<string, unknown>[]).map((r) => {
     const endDate = r.end_date ? String(r.end_date).slice(0, 10) : null;
+    const durationDays = r.duration_days ? Number(r.duration_days) : null;
+    const rawType = (r.type_name as string) ?? null;
+    const typeName = rawType === "Registre media-salam"
+      ? durationDays === 1 ? "Journalier"
+        : durationDays === 7 ? "Hebdomadaire"
+          : durationDays === 365 || durationDays === 366 ? "Annuel" : rawType
+      : rawType;
     return {
       id: Number(r.id),
       code: String(r.code),
@@ -50,10 +58,10 @@ export async function listSubscribers(): Promise<SubscriberRow[]> {
       phone: (r.phone as string) ?? null,
       registeredAt: String(r.registered_at).slice(0, 10),
       status: String(r.status),
-      typeName: (r.type_name as string) ?? null,
+      typeName,
       startDate: r.start_date ? String(r.start_date).slice(0, 10) : null,
       endDate,
-      durationDays: r.duration_days ? Number(r.duration_days) : null,
+      durationDays,
       visitCount: Number(r.visit_count ?? 0),
       lastVisit: r.last_visit ? new Date(String(r.last_visit)) : null,
       computed: computeStatus(endDate, th, String(r.status)),
@@ -137,21 +145,51 @@ export async function dashboardData() {
   )[0]?.c ?? 0;
 
   const daily = await db.execute(sql`
-    select to_char(occurred_at::date,'YYYY-MM-DD') as d,
+    select to_char((occurred_at at time zone 'Africa/Abidjan')::date,'YYYY-MM-DD') as d,
       count(*) filter (where person_type='abonne')::int as abonnes,
       count(*) filter (where person_type='visiteur')::int as visiteurs
-    from visits where occurred_at >= now() - interval '29 days'
+    from visits
+    where occurred_at >= ((date_trunc('day', now() at time zone 'Africa/Abidjan') - interval '29 days') at time zone 'Africa/Abidjan')
+      and occurred_at < ((date_trunc('day', now() at time zone 'Africa/Abidjan') + interval '1 day') at time zone 'Africa/Abidjan')
     group by 1 order by 1
   `);
+  const dailyRows = new Map(
+    (daily.rows as unknown as { d: string; abonnes: number; visiteurs: number }[]).map((row) => [row.d, row]),
+  );
+  const nowUtc = new Date();
+  const today = new Date(Date.UTC(nowUtc.getUTCFullYear(), nowUtc.getUTCMonth(), nowUtc.getUTCDate()));
+  const dailyData = Array.from({ length: 30 }, (_, index) => {
+    const date = new Date(today.getTime() - (29 - index) * 86_400_000);
+    const d = date.toISOString().slice(0, 10);
+    const row = dailyRows.get(d);
+    return { d, abonnes: Number(row?.abonnes ?? 0), visiteurs: Number(row?.visiteurs ?? 0) };
+  });
   const monthly = await db.execute(sql`
-    select to_char(date_trunc('month', occurred_at),'YYYY-MM') as m, count(*)::int as total
-    from visits where occurred_at >= now() - interval '11 months'
+    select to_char(date_trunc('month', occurred_at at time zone 'Africa/Abidjan'),'YYYY-MM') as m, count(*)::int as total
+    from visits
+    where occurred_at >= ((date_trunc('month', now() at time zone 'Africa/Abidjan') - interval '11 months') at time zone 'Africa/Abidjan')
+      and occurred_at < ((date_trunc('month', now() at time zone 'Africa/Abidjan') + interval '1 month') at time zone 'Africa/Abidjan')
     group by 1 order by 1
   `);
+  const monthlyRows = new Map((monthly.rows as unknown as { m: string; total: number }[]).map((row) => [row.m, row]));
+  const monthStart = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 1));
+  const monthlyData = Array.from({ length: 12 }, (_, index) => {
+    const date = new Date(Date.UTC(monthStart.getUTCFullYear(), monthStart.getUTCMonth() - 11 + index, 1));
+    const m = date.toISOString().slice(0, 7);
+    return { m, total: Number(monthlyRows.get(m)?.total ?? 0) };
+  });
   const yearly = await db.execute(sql`
-    select to_char(date_trunc('year', occurred_at),'YYYY') as y, count(*)::int as total
-    from visits group by 1 order by 1
+    select to_char(date_trunc('year', occurred_at at time zone 'Africa/Abidjan'),'YYYY') as y, count(*)::int as total
+    from visits
+    where occurred_at >= ((date_trunc('year', now() at time zone 'Africa/Abidjan') - interval '5 years') at time zone 'Africa/Abidjan')
+      and occurred_at < ((date_trunc('year', now() at time zone 'Africa/Abidjan') + interval '1 year') at time zone 'Africa/Abidjan')
+    group by 1 order by 1
   `);
+  const yearlyRows = new Map((yearly.rows as unknown as { y: string; total: number }[]).map((row) => [row.y, row]));
+  const yearlyData = Array.from({ length: 6 }, (_, index) => {
+    const y = String(today.getUTCFullYear() - 5 + index);
+    return { y, total: Number(yearlyRows.get(y)?.total ?? 0) };
+  });
   const reasons = await db.execute(sql`
     select coalesce(nullif(reason,''),'Non précisé') as reason, count(*)::int as total
     from visits group by 1 order by 2 desc limit 8
@@ -161,9 +199,9 @@ export async function dashboardData() {
     subs,
     counts,
     totalVisitors,
-    daily: daily.rows as unknown as { d: string; abonnes: number; visiteurs: number }[],
-    monthly: monthly.rows as unknown as { m: string; total: number }[],
-    yearly: yearly.rows as unknown as { y: string; total: number }[],
+    daily: dailyData,
+    monthly: monthlyData,
+    yearly: yearlyData,
     reasons: reasons.rows as unknown as { reason: string; total: number }[],
     statusCounts: {
       total: subs.length,

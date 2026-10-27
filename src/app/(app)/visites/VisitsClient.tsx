@@ -10,6 +10,8 @@ type Row = {
   displayName: string;
   reason: string | null;
   occurredAt: string;
+  departedAt: string | null;
+  hasPresence: boolean;
   agentName: string | null;
   syncStatus: string;
   subscriberId: number | null;
@@ -17,6 +19,15 @@ type Row = {
 };
 
 const PAGE_SIZE = 15;
+
+function duration(arrivalText: string, departureText: string | null, hasPresence: boolean) {
+  if (!hasPresence) return "Non suivie";
+  if (!departureText) return "En cours";
+  const arrival = new Date(arrivalText);
+  const end = new Date(departureText);
+  const minutes = Math.max(0, Math.floor((end.getTime() - arrival.getTime()) / 60_000));
+  return `${Math.floor(minutes / 60)} h ${String(minutes % 60).padStart(2, "0")} min`;
+}
 
 export default function VisitsClient({ rows }: { rows: Row[] }) {
   const [q, setQ] = useState("");
@@ -57,12 +68,14 @@ export default function VisitsClient({ rows }: { rows: Row[] }) {
 
       <div className="table-wrap">
         <table className="data">
-          <thead><tr><th>Date et heure</th><th>Type</th><th>Personne</th><th>Motif</th><th>Agent</th><th>Synchro.</th><th>ID visite</th></tr></thead>
+          <thead><tr><th>Arrivée</th><th>Sortie</th><th>Durée</th><th>Type</th><th>Personne</th><th>Motif</th><th>Agent</th><th>Synchro.</th><th>ID visite</th></tr></thead>
           <tbody>
-            {current.length === 0 && <tr><td colSpan={7} className="py-8 text-center text-slate-500">Aucune visite.</td></tr>}
+            {current.length === 0 && <tr><td colSpan={9} className="py-8 text-center text-slate-500">Aucune visite.</td></tr>}
             {current.map((r) => (
               <tr key={r.id}>
-                <td>{new Date(r.occurredAt).toLocaleString("fr-FR")}</td>
+                <td>{new Date(r.occurredAt).toLocaleString("fr-FR", { timeZone: "Africa/Abidjan" })}</td>
+                <td>{r.departedAt ? new Date(r.departedAt).toLocaleTimeString("fr-FR", { timeZone: "Africa/Abidjan", hour: "2-digit", minute: "2-digit" }) : "En cours"}</td>
+                <td>{duration(r.occurredAt, r.departedAt, r.hasPresence)}</td>
                 <td>{r.personType === "abonne" ? "Abonné" : "Visiteur"}</td>
                 <td className="font-semibold">
                   {r.subscriberId ? (

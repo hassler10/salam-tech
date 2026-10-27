@@ -31,13 +31,13 @@ export default async function ImportPage() {
     <div>
       <PageHeader
         title="Registre officiel des abonnés"
-        subtitle="Synchronisez les abonnés de media-salam, puis restreignez la borne aux cartes et aux noms qui y figurent."
+        subtitle="Les abonnés sont toujours vérifiés dans le registre officiel Media Salam. Les visiteurs restent enregistrés dans Salam Library."
       />
       <ImportClient
-        strict={(settings.require_registered_card ?? "0") === "1"}
         imported={imported}
         synced={synced}
         autoConfigured={config.configured}
+        webhookConfigured={config.webhookConfigured}
         upstreamUrl={config.url}
         state={state}
       />
