@@ -59,6 +59,20 @@ export default function Shell({
     }
   }, []);
 
+  useEffect(() => {
+    if (!open) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [open]);
+
   const refresh = useCallback(async () => {
     setPending((await listQueue()).length);
   }, []);
@@ -120,7 +134,7 @@ export default function Shell({
   return (
     <div className="min-h-screen">
       <aside
-        className={`no-print fixed inset-y-0 left-0 z-50 flex w-[280px] flex-col overflow-hidden bg-gradient-to-b from-brand-800 via-brand-900 to-brand-950 text-white shadow-2xl transition-transform duration-300 lg:translate-x-0 ${
+        className={`no-print fixed inset-y-0 left-0 z-50 flex w-[280px] max-w-[calc(100vw-1rem)] flex-col overflow-hidden bg-gradient-to-b from-brand-800 via-brand-900 to-brand-950 text-white shadow-2xl transition-transform duration-300 lg:translate-x-0 ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -147,7 +161,7 @@ export default function Shell({
           </div>
           <button
             onClick={() => setOpen(false)}
-            className="ml-auto rounded-lg p-1.5 text-white/50 transition hover:bg-white/10 hover:text-white lg:hidden"
+            className="ml-auto grid h-11 w-11 place-items-center rounded-lg text-white/70 transition hover:bg-white/10 hover:text-white lg:hidden"
             aria-label="Fermer le menu"
           >
             <Icon name="close" className="h-5 w-5" />
@@ -223,16 +237,18 @@ export default function Shell({
       </aside>
 
       {open && (
-        <div
+        <button
           className="no-print fixed inset-0 z-40 bg-brand-950/60 backdrop-blur-sm lg:hidden"
           onClick={() => setOpen(false)}
+          aria-label="Fermer le menu"
+          tabIndex={-1}
         />
       )}
 
       <div className="flex min-h-screen min-w-0 flex-col lg:pl-[280px]">
         <header className="no-print sticky top-0 z-30 flex items-center gap-3 border-b border-brand-900/[0.06] bg-[var(--app-bg)]/75 px-4 py-3 backdrop-blur-xl dark:border-white/[0.06] sm:px-6">
           <button
-            className="grid h-9 w-9 place-items-center rounded-xl border border-slate-200/80 bg-white/70 text-slate-600 transition hover:bg-white lg:hidden dark:border-white/10 dark:bg-white/5 dark:text-slate-300"
+            className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-slate-200/80 bg-white/70 text-slate-600 transition hover:bg-white lg:hidden dark:border-white/10 dark:bg-white/5 dark:text-slate-300"
             onClick={() => setOpen(true)}
             aria-label="Ouvrir le menu"
           >
@@ -283,7 +299,7 @@ export default function Shell({
 
           <button
             onClick={toggleTheme}
-            className="grid h-9 w-9 place-items-center rounded-xl border border-slate-200/80 bg-white/70 text-slate-500 transition hover:bg-white hover:text-brand-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:text-gold-300"
+            className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-slate-200/80 bg-white/70 text-slate-500 transition hover:bg-white hover:text-brand-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:text-gold-300"
             title="Mode clair / sombre"
             aria-label="Changer de thème"
           >
@@ -308,7 +324,7 @@ export default function Shell({
 
           <button
             onClick={logout}
-            className="grid h-9 w-9 place-items-center rounded-xl border border-slate-200/80 bg-white/70 text-slate-500 transition hover:border-rose-300 hover:bg-rose-50 hover:text-rose-600 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:border-rose-500/40 dark:hover:bg-rose-500/10 dark:hover:text-rose-300"
+            className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-slate-200/80 bg-white/70 text-slate-500 transition hover:border-rose-300 hover:bg-rose-50 hover:text-rose-600 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:border-rose-500/40 dark:hover:bg-rose-500/10 dark:hover:text-rose-300"
             title="Se déconnecter"
             aria-label="Se déconnecter"
           >

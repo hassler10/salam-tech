@@ -1,12 +1,10 @@
-@import "tailwindcss";
-@custom-variant dark (&:where(.dark, .dark *));
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-@theme inline {
+:root {
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-display: var(--font-sora), var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-}
-
-@theme {
   --color-brand-50: #f0faf4;
   --color-brand-100: #dcf3e6;
   --color-brand-200: #b9e6cf;
@@ -18,7 +16,6 @@
   --color-brand-800: #0b4a2f;
   --color-brand-900: #073520;
   --color-brand-950: #041a12;
-
   --color-gold-50: #fbf7eb;
   --color-gold-100: #f5ecd3;
   --color-gold-200: #ecdcae;
@@ -29,13 +26,9 @@
   --color-gold-700: #86632f;
   --color-gold-800: #644a24;
   --color-gold-900: #4a371d;
-
   --shadow-soft: 0 1px 2px rgb(4 26 18 / 0.04), 0 24px 48px -32px rgb(4 26 18 / 0.25);
   --shadow-lift: 0 2px 4px rgb(4 26 18 / 0.04), 0 28px 56px -28px rgb(4 26 18 / 0.32);
   --shadow-glow: 0 18px 48px -24px rgb(197 162 83 / 0.55);
-}
-
-:root {
   --app-bg: #f5f7f3;
   --surface: #ffffff;
   --surface-2: #f1f5f0;
@@ -56,6 +49,9 @@
 
   body {
     min-height: 100%;
+    min-height: 100vh;
+    min-height: 100dvh;
+    overflow-x: hidden;
     font-family: var(--font-sans);
     color: #0b1f17;
     background:
@@ -119,7 +115,12 @@
 
 @layer components {
   .card {
-    @apply rounded-3xl border border-brand-900/[0.07] bg-[var(--surface)]/85 p-5 shadow-soft backdrop-blur-xl transition dark:border-white/[0.08] dark:bg-[var(--surface)]/80 dark:shadow-none;
+    @apply rounded-3xl border border-brand-900/[0.07] p-5 shadow-soft backdrop-blur-xl transition dark:border-white/[0.08] dark:shadow-none;
+    background-color: rgb(255 255 255 / 0.85);
+  }
+
+  .dark .card {
+    background-color: rgb(12 26 19 / 0.8);
   }
 
   .card-dark {
@@ -168,7 +169,15 @@
   }
 
   .table-wrap {
-    @apply overflow-x-auto rounded-2xl border border-brand-900/[0.07] bg-[var(--surface)]/85 shadow-soft backdrop-blur-xl dark:border-white/[0.08] dark:bg-[var(--surface)]/75 dark:shadow-none;
+    @apply overflow-x-auto rounded-2xl border border-brand-900/[0.07] shadow-soft backdrop-blur-xl dark:border-white/[0.08] dark:shadow-none;
+    background-color: rgb(255 255 255 / 0.85);
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    touch-action: pan-x pan-y;
+  }
+
+  .dark .table-wrap {
+    background-color: rgb(12 26 19 / 0.75);
   }
 
   table.data {
@@ -220,6 +229,30 @@
 
   .divider-line {
     @apply h-px w-full bg-gradient-to-r from-transparent via-brand-900/10 to-transparent dark:via-white/10;
+  }
+}
+
+@media (max-width: 639px) {
+  .input,
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+
+  .btn,
+  .btn-primary,
+  .btn-gold,
+  .btn-ghost {
+    min-height: 44px;
+  }
+
+  .table-wrap {
+    max-width: 100%;
+  }
+
+  main {
+    overflow-wrap: anywhere;
   }
 }
 

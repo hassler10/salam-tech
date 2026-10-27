@@ -76,11 +76,35 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         <script
           nonce={nonce}
           dangerouslySetInnerHTML={{
-            __html: `try{if(localStorage.getItem('slp-theme')==='dark'){document.documentElement.classList.add('dark')}}catch(e){}`,
+            __html: `try{if(localStorage.getItem('slp-theme')==='dark'){document.documentElement.classList.add('dark')}}catch(e){}try{var script=document.createElement('script');var supported=('noModule' in script)&&!!window.Promise&&!!window.fetch&&!!(window.CSS&&window.CSS.supports&&window.CSS.supports('display','grid'));if(!supported){document.documentElement.className+=' browser-incompatible'}}catch(e){document.documentElement.className+=' browser-incompatible'}`,
           }}
         />
+        <style nonce={nonce}>{`
+          #browser-compatibility-warning { display: none; }
+          .browser-incompatible #browser-compatibility-warning {
+            position: fixed; inset: 0; z-index: 2147483647; display: flex;
+            align-items: center; justify-content: center; overflow: auto;
+            padding: 24px; background: #f5f7f3; color: #0b1f17;
+            font: 16px/1.6 Arial, sans-serif;
+          }
+          #browser-compatibility-warning > div {
+            box-sizing: border-box; width: 100%; max-width: 560px; padding: 28px;
+            border: 1px solid #d9e3dc; border-radius: 16px; background: #fff;
+          }
+          #browser-compatibility-warning h1 { margin: 0 0 12px; font: bold 24px/1.25 Arial, sans-serif; }
+          #browser-compatibility-warning p { margin: 10px 0; }
+        `}</style>
       </head>
-      <body className="font-sans antialiased">{children}</body>
+      <body className="font-sans antialiased">
+        <div id="browser-compatibility-warning" role="alert">
+          <div>
+            <h1>Ce navigateur est trop ancien</h1>
+            <p>La bibliothèque utilise des technologies Web récentes qui ne sont pas prises en charge par ce navigateur.</p>
+            <p>Mets à jour Microsoft Edge, Google Chrome ou Firefox, ou ouvre la plateforme depuis un téléphone récent. Internet Explorer et les anciennes versions de Microsoft Edge ne sont pas compatibles.</p>
+          </div>
+        </div>
+        {children}
+      </body>
     </html>
   );
 }
