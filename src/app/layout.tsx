@@ -76,7 +76,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         <script
           nonce={nonce}
           dangerouslySetInnerHTML={{
-            __html: `try{if(localStorage.getItem('slp-theme')==='dark'){document.documentElement.classList.add('dark')}}catch(e){}try{var script=document.createElement('script');var supported=('noModule' in script)&&!!window.Promise&&!!window.fetch&&!!(window.CSS&&window.CSS.supports&&window.CSS.supports('display','grid'));if(!supported){document.documentElement.className+=' browser-incompatible'}}catch(e){document.documentElement.className+=' browser-incompatible'}`,
+            __html: `try{if(localStorage.getItem('slp-theme')==='dark'){document.documentElement.classList.add('dark')}}catch(e){}try{var script=document.createElement('script');var css=window.CSS;var supported=('noModule' in script)&&!!window.Promise&&!!window.fetch&&!!(css&&css.supports&&css.supports('display','grid')&&css.supports('color','color-mix(in srgb, #000, #fff)'));if(!supported){document.documentElement.className+=' browser-incompatible'}}catch(e){document.documentElement.className+=' browser-incompatible'}`,
           }}
         />
         <style nonce={nonce}>{`
