@@ -553,7 +553,7 @@ export default async function Home() {
               </h2>
               <p className="mt-4 text-[13.5px] leading-7 text-white/60">
                 {selfServiceAvailable
-                  ? "Abonnés et visiteurs peuvent enregistrer leur passage à l'accueil ou sur la borne après saisie du mot de passe fourni par l'équipe."
+                  ? "Abonnés et visiteurs peuvent enregistrer leur passage à l'accueil ou utiliser la borne après son ouverture par un agent."
                   : "Abonnés et visiteurs peuvent présenter leur carte ou leurs informations à l'accueil; l'équipe enregistrera leur passage."}
               </p>
             </div>

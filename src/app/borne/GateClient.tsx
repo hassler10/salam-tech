@@ -75,7 +75,7 @@ export default function GateClient({
           {configured ? (
             <>
               <p className="mt-2 text-center text-sm leading-6 text-slate-600">
-                Demandez le mot de passe de la borne à l&apos;agent d&apos;accueil et ne le partagez pas. La session se ferme automatiquement après 20 minutes.
+                Présentez cet écran à l&apos;agent d&apos;accueil. Il saisira le mot de passe, puis vous laissera compléter votre enregistrement. La session expire après 20 minutes.
               </p>
               <form onSubmit={unlock} className="mt-6 space-y-4">
                 <div>
@@ -117,7 +117,7 @@ export default function GateClient({
         </section>
 
         <p className="mt-5 text-center text-xs text-white/55">
-          Le mot de passe est réservé au personnel autorisé de la bibliothèque.
+          Le mot de passe est réservé au personnel autorisé. Ne le communiquez pas aux visiteurs.
         </p>
       </div>
     </main>
