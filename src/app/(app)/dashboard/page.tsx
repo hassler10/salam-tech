@@ -71,15 +71,6 @@ export default async function DashboardPage() {
                 <Icon name="users" className="h-4 w-4" />
                 Gérer les abonnés
               </Link>
-              {user?.role === "admin" && (
-                <Link
-                  href="/parametres#data-reset"
-                  className="inline-flex items-center gap-2 rounded-xl border border-rose-200/30 bg-rose-500/10 px-4 py-2.5 text-[12.5px] font-semibold text-rose-50 backdrop-blur transition hover:bg-rose-500/20"
-                >
-                  <Icon name="refresh" className="h-4 w-4" />
-                  Nettoyer les données de test
-                </Link>
-              )}
             </div>
           </div>
 
@@ -226,10 +217,18 @@ export default async function DashboardPage() {
           eyebrow="Analyse"
           title="Graphiques de fréquentation"
           action={
-            <Link href="/rapports" className="btn-ghost px-3 py-1.5 text-[11.5px]">
-              <Icon name="file" className="h-3.5 w-3.5" />
-              Rapports
-            </Link>
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <Link href="/rapports" className="btn-ghost px-3 py-1.5 text-[11.5px]">
+                <Icon name="file" className="h-3.5 w-3.5" />
+                Rapports
+              </Link>
+              {user?.role === "admin" && (
+                <Link href="/parametres#data-reset" className="btn-ghost px-3 py-1.5 text-[11.5px]">
+                  <Icon name="refresh" className="h-3.5 w-3.5" />
+                  Réinitialiser les tests
+                </Link>
+              )}
+            </div>
           }
         />
         <p className="-mt-2 mb-4 text-xs text-slate-500 dark:text-slate-400">
