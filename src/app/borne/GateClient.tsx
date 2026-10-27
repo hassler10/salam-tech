@@ -86,7 +86,7 @@ export default function GateClient({
                     autoComplete="off"
                     autoCapitalize="none"
                     required
-                    maxLength={23}
+                    maxLength={24}
                     autoFocus
                   />
                 </div>
