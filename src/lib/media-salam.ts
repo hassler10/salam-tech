@@ -2,6 +2,7 @@ import { db } from "@/db";
 import { settings, subscribers, subscriptionPeriods } from "@/db/schema";
 import { eq, sql } from "drizzle-orm";
 import { daysBetween, isIsoDay } from "./subscriptions";
+import { DEMO_MODE } from "./demo";
 
 export const MEDIA_SALAM_SOURCE = "media_salam";
 export const MEDIA_SALAM_PERIOD = "Registre media-salam";
@@ -627,6 +628,7 @@ export async function recordMediaSalamFailure(message: string): Promise<void> {
 export type AutoSyncResult = "synced" | "skipped" | "failed";
 
 export function isMediaSalamSyncFresh(map: Record<string, string>, now = Date.now()): boolean {
+  if (DEMO_MODE) return true;
   const syncedAt = Date.parse(map.media_salam_last_sync_at ?? "");
   const age = now - syncedAt;
   return map.media_salam_last_sync_status === "ok" && Number.isFinite(syncedAt) && age >= 0 && age <= MAX_SYNC_AGE_MS;

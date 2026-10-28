@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import type { ReactNode } from "react";
 import { Inter, Sora } from "next/font/google";
 import { getBranding } from "@/lib/branding";
+import { DEMO_MODE } from "@/lib/demo";
 import "./globals.css";
 
 const inter = Inter({
@@ -44,6 +45,7 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     description,
     applicationName: branding.shortName,
+    robots: DEMO_MODE ? { index: false, follow: false } : undefined,
     manifest: "/manifest.webmanifest",
     icons: { icon: branding.logoUrl, apple: branding.logoUrl },
     appleWebApp: {
@@ -96,6 +98,11 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         `}</style>
       </head>
       <body className="font-sans antialiased">
+        {DEMO_MODE && (
+          <div className="bg-amber-400 px-4 py-2 text-center text-[13px] font-semibold leading-snug text-amber-950">
+            Mode démonstration — données fictives, aucune donnée réelle de la bibliothèque
+          </div>
+        )}
         <div id="browser-compatibility-warning" role="alert">
           <div>
             <h1>Ce navigateur est trop ancien</h1>

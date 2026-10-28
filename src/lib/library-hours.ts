@@ -1,3 +1,5 @@
+import { DEMO_MODE } from "./demo";
+
 export const LIBRARY_TIME_ZONE = "Africa/Abidjan";
 export const LIBRARY_OPEN_MINUTES = 8 * 60;
 export const LIBRARY_CLOSE_MINUTES = 16 * 60;
@@ -22,6 +24,7 @@ export function getLibraryClock(date = new Date()) {
 }
 
 export function isLibraryOpen(date = new Date()) {
+  if (DEMO_MODE) return true;
   const minute = getLibraryClock(date).minuteOfDay;
   return minute >= LIBRARY_OPEN_MINUTES && minute < LIBRARY_CLOSE_MINUTES;
 }

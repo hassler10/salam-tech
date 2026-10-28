@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { randomUUID } from "crypto";
+import { DEMO_MODE } from "@/lib/demo";
 
 const MUTATING = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 // Appel serveur à serveur authentifié par HMAC et horodatage, sans cookie de session :
@@ -7,6 +8,11 @@ const MUTATING = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 const SIGNATURE_AUTHENTICATED = new Set(["/api/webhooks/media-salam"]);
 const MAX_API_BODY_BYTES = 6_000_000;
 const CSP_EXCLUDED = ["_next/static", "_next/image", "favicon.ico", "sw.js", "manifest.webmanifest"];
+
+function applyDemoHeaders<T extends NextResponse>(response: T): T {
+  if (DEMO_MODE) response.headers.set("X-Robots-Tag", "noindex, nofollow");
+  return response;
+}
 
 function contentSecurityPolicy(nonce: string) {
   const dev = process.env.NODE_ENV === "development";
@@ -62,7 +68,7 @@ export function proxy(request: NextRequest) {
   }
 
   if (isApi || CSP_EXCLUDED.some((prefix) => request.nextUrl.pathname.startsWith(`/${prefix}`))) {
-    return NextResponse.next();
+    return applyDemoHeaders(NextResponse.next());
   }
 
   const nonce = Buffer.from(randomUUID()).toString("base64");
@@ -72,7 +78,7 @@ export function proxy(request: NextRequest) {
   requestHeaders.set("x-nonce", nonce);
   const response = NextResponse.next({ request: { headers: requestHeaders } });
   response.headers.set("Content-Security-Policy", csp);
-  return response;
+  return applyDemoHeaders(response);
 }
 
 export const config = {

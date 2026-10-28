@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { settings } from "@/db/schema";
+import { DEMO_MODE } from "./demo";
 
 const COOKIE_NAME = "slp_self_service_gate";
 const CODE_SETTING = "self_service_gate_code";
@@ -125,6 +126,7 @@ export async function createSelfServiceGateSession(): Promise<void> {
 }
 
 export async function hasSelfServiceGateSession(): Promise<boolean> {
+  if (DEMO_MODE) return true;
   const store = await cookies();
   const value = store.get(COOKIE_NAME)?.value;
   if (!value) return false;
